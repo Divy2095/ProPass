@@ -1,0 +1,605 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/digitalPassRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    android:clipChildren="false"
+    android:clipToPadding="false"
+    tools:context=".DigitalPassActivity">
+
+    <!-- Subtle Ambient Glow Backgrounds -->
+    <View
+        android:layout_width="260dp"
+        android:layout_height="260dp"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="32dp"
+        android:layout_marginEnd="-60dp"
+        android:alpha="0.35"
+        android:background="@drawable/bg_ambient_orb_top_left" />
+
+    <View
+        android:layout_width="260dp"
+        android:layout_height="260dp"
+        android:layout_gravity="bottom|start"
+        android:layout_marginStart="-60dp"
+        android:layout_marginBottom="64dp"
+        android:alpha="0.3"
+        android:background="@drawable/bg_ambient_orb_bottom_right" />
+
+    <!-- Scrollable Pass Content -->
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/passScrollView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:fillViewport="true"
+        android:overScrollMode="never">
+
+        <LinearLayout
+            android:id="@+id/passContent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp">
+
+            <!-- Top Spacer View (adjusted for Top App Bar + Status Bar) -->
+            <View
+                android:id="@+id/topBarSpacer"
+                android:layout_width="match_parent"
+                android:layout_height="64dp" />
+
+            <!-- The Digital Pass Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardPass"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:clickable="true"
+                android:focusable="true"
+                app:cardBackgroundColor="@color/surface_container_lowest"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="8dp"
+                app:cardPreventCornerOverlap="false"
+                app:strokeColor="#330032D7"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical"
+                    android:padding="24dp">
+
+                    <!-- 1. Header: Profile & Identity -->
+                    <FrameLayout
+                        android:id="@+id/avatarContainer"
+                        android:layout_width="96dp"
+                        android:layout_height="96dp"
+                        android:layout_gravity="center_horizontal">
+
+                        <!-- Profile Avatar Circle with White Ring Frame -->
+                        <FrameLayout
+                            android:layout_width="96dp"
+                            android:layout_height="96dp"
+                            android:background="@drawable/bg_avatar_circle"
+                            android:elevation="4dp">
+
+                            <ImageView
+                                android:id="@+id/ivProfileAvatar"
+                                android:layout_width="56dp"
+                                android:layout_height="56dp"
+                                android:layout_gravity="center"
+                                android:contentDescription="@null"
+                                android:src="@drawable/ic_person"
+                                app:tint="@color/outline" />
+                        </FrameLayout>
+
+                        <!-- Verified Badge (24dp x 24dp) -->
+                        <FrameLayout
+                            android:id="@+id/badgeVerified"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:layout_gravity="bottom|end"
+                            android:background="@drawable/bg_verified_circle_badge"
+                            android:elevation="6dp">
+
+                            <ImageView
+                                android:layout_width="14dp"
+                                android:layout_height="14dp"
+                                android:layout_gravity="center"
+                                android:contentDescription="@string/cd_verified_badge"
+                                android:src="@drawable/ic_check"
+                                app:tint="#FFFFFF" />
+                        </FrameLayout>
+
+                    </FrameLayout>
+
+                    <!-- User Name -->
+                    <TextView
+                        android:id="@+id/tvUserName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:fontFamily="@font/inter_semibold"
+                        android:includeFontPadding="false"
+                        android:text="@string/pass_holder_name"
+                        android:textColor="@color/on_surface"
+                        android:textSize="22sp" />
+
+                    <!-- User Job Role -->
+                    <TextView
+                        android:id="@+id/tvUserRole"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:fontFamily="@font/inter_regular"
+                        android:includeFontPadding="false"
+                        android:text="@string/pass_holder_role"
+                        android:textColor="@color/on_surface_variant"
+                        android:textSize="14sp" />
+
+                    <!-- Organization Chip -->
+                    <LinearLayout
+                        android:id="@+id/chipOrg"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:background="@drawable/bg_org_pill"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingStart="12dp"
+                        android:paddingTop="4dp"
+                        android:paddingEnd="12dp"
+                        android:paddingBottom="4dp">
+
+                        <ImageView
+                            android:layout_width="14dp"
+                            android:layout_height="14dp"
+                            android:layout_marginEnd="4dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_business"
+                            app:tint="@color/primary" />
+
+                        <TextView
+                            android:id="@+id/tvUserOrg"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/inter_medium"
+                            android:includeFontPadding="false"
+                            android:text="@string/pass_holder_org"
+                            android:textColor="@color/secondary"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <!-- 2. Contact Methods Row -->
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="24dp"
+                        android:gravity="center"
+                        android:orientation="horizontal">
+
+                        <!-- Email Button -->
+                        <FrameLayout
+                            android:id="@+id/btnContactMail"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:layout_marginEnd="16dp"
+                            android:background="@drawable/bg_contact_circle"
+                            android:clickable="true"
+                            android:focusable="true">
+
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:layout_gravity="center"
+                                android:contentDescription="@string/cd_contact_mail"
+                                android:src="@drawable/ic_mail"
+                                app:tint="@color/on_surface" />
+                        </FrameLayout>
+
+                        <!-- Call Button -->
+                        <FrameLayout
+                            android:id="@+id/btnContactCall"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:layout_marginEnd="16dp"
+                            android:background="@drawable/bg_contact_circle"
+                            android:clickable="true"
+                            android:focusable="true">
+
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:layout_gravity="center"
+                                android:contentDescription="@string/cd_contact_call"
+                                android:src="@drawable/ic_call"
+                                app:tint="@color/on_surface" />
+                        </FrameLayout>
+
+                        <!-- LinkedIn Button -->
+                        <FrameLayout
+                            android:id="@+id/btnContactSocial"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:background="@drawable/bg_contact_circle"
+                            android:clickable="true"
+                            android:focusable="true">
+
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:layout_gravity="center"
+                                android:contentDescription="@string/cd_contact_social"
+                                android:src="@drawable/ic_linkedin"
+                                app:tint="@color/on_surface" />
+                        </FrameLayout>
+
+                    </LinearLayout>
+
+                    <!-- 3. QR Code Section -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="24dp"
+                        android:gravity="center_horizontal"
+                        android:orientation="vertical">
+
+                        <!-- Section Divider -->
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:layout_marginBottom="16dp"
+                            android:background="@color/surface_variant" />
+
+                        <!-- Section Caption -->
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="16dp"
+                            android:fontFamily="@font/inter_medium"
+                            android:includeFontPadding="false"
+                            android:letterSpacing="0.05"
+                            android:text="@string/pass_scan_to_connect"
+                            android:textAllCaps="true"
+                            android:textColor="@color/on_surface_variant"
+                            android:textSize="12sp" />
+
+                        <!-- QR Code Box (172dp x 172dp) -->
+                        <FrameLayout
+                            android:id="@+id/qrContainer"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_qr_box"
+                            android:elevation="2dp"
+                            android:padding="16dp">
+
+                            <ImageView
+                                android:id="@+id/ivQrCode"
+                                android:layout_width="140dp"
+                                android:layout_height="140dp"
+                                android:layout_gravity="center"
+                                android:contentDescription="@string/cd_qr_code"
+                                android:src="@drawable/ic_qr_sample"
+                                app:tint="@color/on_surface" />
+                        </FrameLayout>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Action Buttons Section -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="32dp"
+                android:layout_marginBottom="24dp"
+                android:orientation="vertical">
+
+                <!-- Primary Action: Share Link -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnShareLink"
+                    style="@style/Widget.MaterialComponents.Button"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:backgroundTint="@color/primary"
+                    android:fontFamily="@font/inter_medium"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:text="@string/btn_share_link"
+                    android:textAllCaps="false"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp"
+                    app:cornerRadius="12dp"
+                    app:elevation="4dp"
+                    app:icon="@drawable/ic_share"
+                    app:iconGravity="textStart"
+                    app:iconPadding="8dp"
+                    app:iconSize="20dp"
+                    app:iconTint="#FFFFFF" />
+
+                <!-- Secondary Actions: Save Image & To Wallet -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:orientation="horizontal">
+
+                    <!-- Save Image Button -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnSaveImage"
+                        style="@style/Widget.MaterialComponents.Button"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_marginEnd="8dp"
+                        android:layout_weight="1"
+                        android:backgroundTint="@color/surface_container"
+                        android:fontFamily="@font/inter_medium"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:text="@string/btn_save_image"
+                        android:textAllCaps="false"
+                        android:textColor="@color/on_surface"
+                        android:textSize="12sp"
+                        app:cornerRadius="12dp"
+                        app:elevation="0dp"
+                        app:icon="@drawable/ic_download"
+                        app:iconGravity="textStart"
+                        app:iconPadding="8dp"
+                        app:iconSize="20dp"
+                        app:iconTint="@color/on_surface" />
+
+                    <!-- To Wallet Button -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnToWallet"
+                        style="@style/Widget.MaterialComponents.Button"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="1"
+                        android:backgroundTint="@color/on_surface"
+                        android:fontFamily="@font/inter_medium"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:text="@string/btn_to_wallet"
+                        android:textAllCaps="false"
+                        android:textColor="@color/surface"
+                        android:textSize="12sp"
+                        app:cornerRadius="12dp"
+                        app:elevation="0dp"
+                        app:icon="@drawable/ic_wallet"
+                        app:iconGravity="textStart"
+                        app:iconPadding="8dp"
+                        app:iconSize="20dp"
+                        app:iconTint="@color/surface" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- Bottom Spacer View (adjusted for Bottom Navigation Bar + Navigation Bar insets) -->
+            <View
+                android:id="@+id/bottomBarSpacer"
+                android:layout_width="match_parent"
+                android:layout_height="120dp" />
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- Fixed Top App Bar -->
+    <LinearLayout
+        android:id="@+id/topAppBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:background="@drawable/bg_translucent_bar"
+        android:elevation="4dp"
+        android:orientation="vertical"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_marginEnd="8dp"
+                android:contentDescription="@string/cd_app_icon"
+                android:src="@drawable/ic_propass_logo" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="@font/inter_semibold"
+                android:includeFontPadding="false"
+                android:text="@string/pass_screen_title"
+                android:textColor="@color/on_surface"
+                android:textSize="20sp" />
+
+            <FrameLayout
+                android:id="@+id/topBarAvatar"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="@drawable/bg_avatar_circle">
+
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_person"
+                    app:tint="@color/outline" />
+            </FrameLayout>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Fixed Bottom Navigation Bar with Center Elevated Scan Action -->
+    <LinearLayout
+        android:id="@+id/bottomNavBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:background="@drawable/bg_translucent_bar"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:elevation="8dp"
+        android:orientation="vertical">
+
+        <!-- 4-Tab Container -->
+        <LinearLayout
+            android:id="@+id/bottomNavTabContainer"
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <!-- Tab 1: Home -->
+            <LinearLayout
+                android:id="@+id/tabHome"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_home"
+                    app:tint="@color/on_surface_variant" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:fontFamily="@font/inter_medium"
+                    android:includeFontPadding="false"
+                    android:text="@string/nav_home"
+                    android:textColor="@color/on_surface_variant"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <!-- Tab 2: Scan with Elevated FAB -->
+            <FrameLayout
+                android:id="@+id/tabScan"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:clipChildren="false"
+                android:clipToPadding="false"
+                android:clickable="true"
+                android:focusable="true">
+
+                <!-- Elevated Scan FAB (56dp x 56dp, -24dp top offset) -->
+                <FrameLayout
+                    android:id="@+id/fabScan"
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    android:layout_gravity="top|center_horizontal"
+                    android:layout_marginTop="-24dp"
+                    android:background="@drawable/bg_scan_fab"
+                    android:elevation="6dp">
+
+                    <ImageView
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_qr_code_scanner"
+                        app:tint="#FFFFFF" />
+                </FrameLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="8dp"
+                    android:fontFamily="@font/inter_medium"
+                    android:includeFontPadding="false"
+                    android:text="@string/nav_scan"
+                    android:textColor="@color/on_surface_variant"
+                    android:textSize="12sp" />
+            </FrameLayout>
+
+            <!-- Tab 3: My Pass (Active) -->
+            <LinearLayout
+                android:id="@+id/tabMyPass"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_badge"
+                    app:tint="@color/primary" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:fontFamily="@font/inter_medium"
+                    android:includeFontPadding="false"
+                    android:text="@string/nav_my_pass"
+                    android:textColor="@color/primary"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <!-- Tab 4: Profile -->
+            <LinearLayout
+                android:id="@+id/tabProfile"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_person_outline"
+                    app:tint="@color/on_surface_variant" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:fontFamily="@font/inter_medium"
+                    android:includeFontPadding="false"
+                    android:text="@string/nav_profile"
+                    android:textColor="@color/on_surface_variant"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</FrameLayout>

@@ -1,0 +1,671 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/smartFormRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    tools:context=".SmartFormRegistrationActivity">
+
+    <!-- Scrollable Form Body underneath fixed Top & Bottom Bars -->
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/formScrollView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:fillViewport="true"
+        android:overScrollMode="never">
+
+        <LinearLayout
+            android:id="@+id/formContentContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp">
+
+            <!-- Top Header Spacer (Dynamically adjusted for Top App Bar + Status Bar) -->
+            <View
+                android:id="@+id/topBarSpacer"
+                android:layout_width="match_parent"
+                android:layout_height="64dp" />
+
+            <!-- Event Registration Header -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingTop="24dp"
+                android:paddingBottom="16dp">
+
+                <TextView
+                    android:id="@+id/tvOverline"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:fontFamily="@font/inter_semibold"
+                    android:includeFontPadding="false"
+                    android:letterSpacing="0.05"
+                    android:text="@string/event_registration_overline"
+                    android:textAllCaps="true"
+                    android:textColor="@color/secondary"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/tvEventTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:fontFamily="@font/inter_bold"
+                    android:includeFontPadding="false"
+                    android:letterSpacing="-0.02"
+                    android:lineHeight="40sp"
+                    android:text="@string/event_title"
+                    android:textColor="@color/on_surface"
+                    android:textSize="32sp"
+                    tools:targetApi="p" />
+
+                <TextView
+                    android:id="@+id/tvEventSubtitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/inter_regular"
+                    android:includeFontPadding="false"
+                    android:lineHeight="20sp"
+                    android:text="@string/event_subtitle"
+                    android:textColor="@color/on_surface_variant"
+                    android:textSize="14sp"
+                    tools:targetApi="p" />
+
+            </LinearLayout>
+
+            <!-- Auto-filled Identity Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardAutoFilled"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                app:cardBackgroundColor="@color/surface_container_low"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="1dp"
+                app:cardPreventCornerOverlap="false"
+                app:strokeWidth="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <!-- Card Header Banner -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="16dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <!-- 32dp verified circle badge -->
+                        <FrameLayout
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:layout_marginEnd="10dp"
+                            android:background="@drawable/bg_verified_circle_badge">
+
+                            <ImageView
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:layout_gravity="center"
+                                android:contentDescription="@null"
+                                android:src="@drawable/ic_verified" />
+                        </FrameLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="@font/inter_semibold"
+                                android:includeFontPadding="false"
+                                android:letterSpacing="0.05"
+                                android:text="@string/auto_filled_header"
+                                android:textAllCaps="true"
+                                android:textColor="@color/primary"
+                                android:textSize="12sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:fontFamily="@font/inter_regular"
+                                android:includeFontPadding="false"
+                                android:text="@string/auto_filled_caption"
+                                android:textColor="@color/on_surface_variant"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                    <!-- Auto-filled Row 1: Full Name -->
+                    <LinearLayout
+                        android:id="@+id/rowFullName"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        android:background="@drawable/bg_autofill_row"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:padding="8dp">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_marginStart="8dp"
+                            android:layout_marginEnd="16dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_person"
+                            app:tint="@color/secondary" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="@font/inter_regular"
+                                android:includeFontPadding="false"
+                                android:text="@string/label_full_name"
+                                android:textColor="@color/secondary"
+                                android:textSize="12sp" />
+
+                            <TextView
+                                android:id="@+id/tvValFullName"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="@font/inter_medium"
+                                android:includeFontPadding="false"
+                                android:text="@string/val_full_name"
+                                android:textColor="@color/on_surface"
+                                android:textSize="14sp" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:layout_marginEnd="8dp"
+                            android:contentDescription="@string/cd_edit"
+                            android:src="@drawable/ic_edit"
+                            app:tint="@color/outline_variant" />
+
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tvErrorFullName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:layout_marginTop="-4dp"
+                        android:layout_marginBottom="8dp"
+                        android:fontFamily="@font/inter_regular"
+                        android:textColor="@color/error"
+                        android:textSize="12sp"
+                        android:visibility="gone" />
+
+                    <!-- Auto-filled Row 2: Email Address -->
+                    <LinearLayout
+                        android:id="@+id/rowEmail"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        android:background="@drawable/bg_autofill_row"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:padding="8dp">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_marginStart="8dp"
+                            android:layout_marginEnd="16dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_mail"
+                            app:tint="@color/secondary" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="@font/inter_regular"
+                                android:includeFontPadding="false"
+                                android:text="@string/label_email_address"
+                                android:textColor="@color/secondary"
+                                android:textSize="12sp" />
+
+                            <TextView
+                                android:id="@+id/tvValEmail"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="@font/inter_medium"
+                                android:includeFontPadding="false"
+                                android:text="@string/val_email_address"
+                                android:textColor="@color/on_surface"
+                                android:textSize="14sp" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:layout_marginEnd="8dp"
+                            android:contentDescription="@string/cd_edit"
+                            android:src="@drawable/ic_edit"
+                            app:tint="@color/outline_variant" />
+
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tvErrorEmail"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:layout_marginTop="-4dp"
+                        android:layout_marginBottom="8dp"
+                        android:fontFamily="@font/inter_regular"
+                        android:textColor="@color/error"
+                        android:textSize="12sp"
+                        android:visibility="gone" />
+
+                    <!-- Auto-filled Row 3: Institution -->
+                    <LinearLayout
+                        android:id="@+id/rowInstitution"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_autofill_row"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:padding="8dp">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_marginStart="8dp"
+                            android:layout_marginEnd="16dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_school"
+                            app:tint="@color/secondary" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="@font/inter_regular"
+                                android:includeFontPadding="false"
+                                android:text="@string/label_institution"
+                                android:textColor="@color/secondary"
+                                android:textSize="12sp" />
+
+                            <TextView
+                                android:id="@+id/tvValInstitution"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="@font/inter_medium"
+                                android:includeFontPadding="false"
+                                android:text="@string/val_institution"
+                                android:textColor="@color/on_surface"
+                                android:textSize="14sp" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:layout_marginEnd="8dp"
+                            android:contentDescription="@string/cd_edit"
+                            android:src="@drawable/ic_edit"
+                            app:tint="@color/outline_variant" />
+
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tvErrorInstitution"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:layout_marginTop="4dp"
+                        android:fontFamily="@font/inter_regular"
+                        android:textColor="@color/error"
+                        android:textSize="12sp"
+                        android:visibility="gone" />
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Manual Fields Section: Event Details -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingBottom="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    android:fontFamily="@font/inter_semibold"
+                    android:includeFontPadding="false"
+                    android:text="@string/event_details_section"
+                    android:textColor="@color/on_surface"
+                    android:textSize="20sp" />
+
+                <!-- Field 1: Purpose of Visit -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginBottom="4dp"
+                    android:fontFamily="@font/inter_medium"
+                    android:includeFontPadding="false"
+                    android:text="@string/label_purpose_of_visit"
+                    android:textColor="@color/on_surface"
+                    android:textSize="12sp" />
+
+                <FrameLayout
+                    android:id="@+id/layoutPurposeSelect"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginBottom="4dp"
+                    android:background="@drawable/bg_field_selector"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <TextView
+                        android:id="@+id/tvSelectedPurpose"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:fontFamily="@font/inter"
+                        android:gravity="center_vertical"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="44dp"
+                        android:text="@string/hint_select_purpose"
+                        android:textColor="@color/on_surface"
+                        android:textSize="16sp" />
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_gravity="center_vertical|end"
+                        android:layout_marginEnd="12dp"
+                        android:contentDescription="@string/cd_expand"
+                        android:src="@drawable/ic_expand_more"
+                        app:tint="@color/on_surface_variant" />
+
+                </FrameLayout>
+
+                <TextView
+                    android:id="@+id/tvErrorPurpose"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginBottom="12dp"
+                    android:fontFamily="@font/inter_regular"
+                    android:textColor="@color/error"
+                    android:textSize="12sp"
+                    android:visibility="gone" />
+
+                <!-- Field 2: Expected Duration -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginBottom="4dp"
+                    android:fontFamily="@font/inter_medium"
+                    android:includeFontPadding="false"
+                    android:text="@string/label_expected_duration"
+                    android:textColor="@color/on_surface"
+                    android:textSize="12sp" />
+
+                <EditText
+                    android:id="@+id/etDuration"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginBottom="4dp"
+                    android:background="@drawable/bg_field_selector"
+                    android:fontFamily="@font/inter"
+                    android:hint="@string/hint_duration"
+                    android:importantForAutofill="no"
+                    android:includeFontPadding="false"
+                    android:inputType="number"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:textColor="@color/on_surface"
+                    android:textColorHint="@color/outline_variant"
+                    android:textSize="16sp" />
+
+                <TextView
+                    android:id="@+id/tvErrorDuration"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginBottom="12dp"
+                    android:fontFamily="@font/inter_regular"
+                    android:textColor="@color/error"
+                    android:textSize="12sp"
+                    android:visibility="gone" />
+
+                <!-- Field 3: Vehicle Number -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginEnd="8dp"
+                    android:layout_marginBottom="4dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:fontFamily="@font/inter_medium"
+                        android:includeFontPadding="false"
+                        android:text="@string/label_vehicle_number"
+                        android:textColor="@color/on_surface"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/inter_regular"
+                        android:includeFontPadding="false"
+                        android:text="@string/label_optional"
+                        android:textColor="@color/outline"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <FrameLayout
+                    android:id="@+id/layoutVehicleContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:background="@drawable/bg_field_selector">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="center_vertical|start"
+                        android:layout_marginStart="14dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_directions_car"
+                        app:tint="@color/on_surface_variant" />
+
+                    <EditText
+                        android:id="@+id/etVehicle"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@null"
+                        android:fontFamily="@font/inter"
+                        android:hint="@string/hint_vehicle_number"
+                        android:importantForAutofill="no"
+                        android:includeFontPadding="false"
+                        android:inputType="textCapCharacters"
+                        android:paddingStart="44dp"
+                        android:paddingEnd="16dp"
+                        android:textAllCaps="true"
+                        android:textColor="@color/on_surface"
+                        android:textColorHint="@color/outline_variant"
+                        android:textSize="16sp" />
+
+                </FrameLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginBottom="32dp"
+                    android:fontFamily="@font/inter_regular"
+                    android:includeFontPadding="false"
+                    android:text="@string/helper_vehicle_parking"
+                    android:textColor="@color/on_surface_variant"
+                    android:textSize="12sp" />
+
+            </LinearLayout>
+
+            <!-- Bottom Spacer to ensure full scrollability past sticky button -->
+            <View
+                android:id="@+id/bottomBarSpacer"
+                android:layout_width="match_parent"
+                android:layout_height="96dp" />
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- Fixed/Sticky Top App Bar (Translucent frosted glass with shadow) -->
+    <LinearLayout
+        android:id="@+id/topAppBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:background="@drawable/bg_translucent_bar"
+        android:elevation="4dp"
+        android:orientation="vertical"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <!-- Back Icon Button (40dp x 40dp) -->
+            <FrameLayout
+                android:id="@+id/btnBack"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginStart="-8dp"
+                android:layout_marginEnd="4dp"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@string/cd_back"
+                    android:src="@drawable/ic_arrow_back"
+                    app:tint="@color/on_surface" />
+            </FrameLayout>
+
+            <!-- ProPass Logo (24dp) -->
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginEnd="8dp"
+                android:contentDescription="@string/cd_app_icon"
+                android:src="@drawable/ic_propass_logo" />
+
+            <!-- Title: Pass Details -->
+            <TextView
+                android:id="@+id/tvTopBarTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="@font/inter_semibold"
+                android:includeFontPadding="false"
+                android:text="@string/pass_details_title"
+                android:textColor="@color/on_surface"
+                android:textSize="20sp" />
+
+            <!-- Profile Avatar (32dp) -->
+            <FrameLayout
+                android:id="@+id/topAvatar"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="@drawable/bg_avatar_circle">
+
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_person"
+                    app:tint="@color/outline" />
+            </FrameLayout>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Fixed/Sticky Bottom Action Bar (Translucent with Review & Submit button) -->
+    <FrameLayout
+        android:id="@+id/stickyBottomBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:background="@drawable/bg_translucent_bar"
+        android:elevation="8dp"
+        android:paddingStart="20dp"
+        android:paddingTop="16dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="16dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnReviewSubmit"
+            style="@style/Widget.ProPass.Button.Primary"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:text="@string/btn_review_and_submit"
+            app:cornerRadius="12dp"
+            app:icon="@drawable/ic_arrow_forward"
+            app:iconGravity="textEnd"
+            app:iconPadding="8dp" />
+
+    </FrameLayout>
+
+</FrameLayout>

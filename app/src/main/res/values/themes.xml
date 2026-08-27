@@ -1,0 +1,143 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Theme.ProPass" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <!-- Primary brand color. -->
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorPrimaryVariant">@color/primary_container</item>
+        <item name="colorOnPrimary">@color/on_primary</item>
+        <!-- Secondary brand color. -->
+        <item name="colorSecondary">@color/secondary</item>
+        <item name="colorSecondaryVariant">@color/secondary_container</item>
+        <item name="colorOnSecondary">@color/on_secondary</item>
+        <!-- Status & navigation bars. -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">true</item>
+        <item name="android:fontFamily">@font/inter</item>
+    </style>
+
+    <!-- Splash Screen theme -->
+    <style name="Theme.ProPass.Splash" parent="Theme.ProPass">
+        <item name="android:windowBackground">@color/surface_container_lowest</item>
+    </style>
+
+    <!-- Login Screen theme -->
+    <style name="Theme.ProPass.Login" parent="Theme.ProPass">
+        <item name="android:windowBackground">@color/background</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">true</item>
+    </style>
+
+    <!-- Onboarding Screen theme -->
+    <style name="Theme.ProPass.Onboarding" parent="Theme.ProPass">
+        <item name="android:windowBackground">@color/background</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">true</item>
+    </style>
+
+    <!-- ProPass Filled TextInput Style (12dp radius, #EDEEEF bg, smooth focus stroke) -->
+    <style name="Widget.ProPass.TextInputLayout.Filled" parent="Widget.MaterialComponents.TextInputLayout.FilledBox">
+        <item name="boxBackgroundColor">@color/surface_container</item>
+        <item name="boxCornerRadiusTopStart">12dp</item>
+        <item name="boxCornerRadiusTopEnd">12dp</item>
+        <item name="boxCornerRadiusBottomStart">12dp</item>
+        <item name="boxCornerRadiusBottomEnd">12dp</item>
+        <item name="boxStrokeWidth">0dp</item>
+        <item name="boxStrokeWidthFocused">2dp</item>
+        <item name="boxStrokeColor">@color/primary</item>
+        <item name="boxStrokeErrorColor">@color/error</item>
+        <item name="errorIconDrawable">@null</item>
+        <item name="errorTextColor">@color/error</item>
+        <item name="hintTextColor">@color/primary</item>
+        <item name="android:textColorHint">@color/on_surface_variant</item>
+        <item name="hintTextAppearance">@style/TextAppearance.ProPass.FloatingHint</item>
+        <item name="errorTextAppearance">@style/TextAppearance.ProPass.ErrorText</item>
+    </style>
+
+    <!-- Floating Hint Typography -->
+    <style name="TextAppearance.ProPass.FloatingHint" parent="TextAppearance.MaterialComponents.Caption">
+        <item name="android:fontFamily">@font/inter_medium</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:textColor">@color/primary</item>
+    </style>
+
+    <!-- Error Text Typography -->
+    <style name="TextAppearance.ProPass.ErrorText" parent="TextAppearance.MaterialComponents.Caption">
+        <item name="android:fontFamily">@font/inter_regular</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:textColor">@color/error</item>
+    </style>
+
+    <!-- Primary Button (12dp radius, 56dp height, primary blue, ripple) -->
+    <style name="Widget.ProPass.Button.Primary" parent="Widget.MaterialComponents.Button">
+        <item name="android:fontFamily">@font/inter_medium</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textColor">@color/on_primary</item>
+        <item name="android:letterSpacing">0</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="backgroundTint">@color/primary</item>
+        <item name="cornerRadius">12dp</item>
+        <item name="elevation">4dp</item>
+        <item name="iconGravity">textEnd</item>
+        <item name="iconTint">@color/on_primary</item>
+        <item name="iconPadding">8dp</item>
+        <item name="rippleColor">#33FFFFFF</item>
+    </style>
+
+    <!-- 16dp Radius Primary Button ("Next") -->
+    <style name="Widget.ProPass.Button.Primary16" parent="Widget.MaterialComponents.Button">
+        <item name="android:fontFamily">@font/inter_medium</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@color/on_primary</item>
+        <item name="android:letterSpacing">0</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="backgroundTint">@color/primary</item>
+        <item name="cornerRadius">16dp</item>
+        <item name="elevation">4dp</item>
+        <item name="iconGravity">textEnd</item>
+        <item name="iconTint">@color/on_primary</item>
+        <item name="iconPadding">6dp</item>
+        <item name="rippleColor">#33FFFFFF</item>
+    </style>
+
+    <!-- 16dp Radius Text/Transparent Button ("Skip") -->
+    <style name="Widget.ProPass.Button.Text16" parent="Widget.MaterialComponents.Button.TextButton">
+        <item name="android:fontFamily">@font/inter_medium</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@color/primary</item>
+        <item name="android:letterSpacing">0</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="cornerRadius">16dp</item>
+        <item name="rippleColor">#1A0032D7</item>
+    </style>
+
+    <!-- Full Pill Primary Button (56dp height, 999dp radius, primary blue) -->
+    <style name="Widget.ProPass.Button.PillPrimary" parent="Widget.MaterialComponents.Button">
+        <item name="android:fontFamily">@font/inter_medium</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textColor">@color/on_primary</item>
+        <item name="android:letterSpacing">0</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="backgroundTint">@color/primary</item>
+        <item name="cornerRadius">999dp</item>
+        <item name="elevation">4dp</item>
+        <item name="rippleColor">#33FFFFFF</item>
+    </style>
+
+    <!-- Google Button (12dp radius, 56dp height, white bg, on_surface text) -->
+    <style name="Widget.ProPass.Button.Google" parent="Widget.MaterialComponents.Button">
+        <item name="android:fontFamily">@font/inter_medium</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textColor">@color/on_surface</item>
+        <item name="android:letterSpacing">0</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="backgroundTint">@color/surface_container_lowest</item>
+        <item name="cornerRadius">12dp</item>
+        <item name="elevation">1dp</item>
+        <item name="iconGravity">textStart</item>
+        <item name="iconTint">@null</item>
+        <item name="iconPadding">16dp</item>
+        <item name="rippleColor">#1A000000</item>
+    </style>
+</resources>

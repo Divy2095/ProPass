@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/profileCreationScrollView"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    android:fillViewport="true"
+    android:overScrollMode="never"
+    tools:context=".OnboardingProfileCreationActivity">
+
+    <LinearLayout
+        android:id="@+id/profileCreationRoot"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <!-- Main Content Area (Vertically centered) -->
+        <LinearLayout
+            android:id="@+id/mainContentSection"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:paddingStart="20dp"
+            android:paddingTop="24dp"
+            android:paddingEnd="20dp">
+
+            <!-- Hero Staging Box (256dp height, centered, 48dp spacing below) -->
+            <FrameLayout
+                android:id="@+id/heroStagingBox"
+                android:layout_width="match_parent"
+                android:layout_height="256dp"
+                android:layout_marginBottom="48dp"
+                android:clipChildren="false"
+                android:clipToPadding="false">
+
+                <!-- Ambient Subtle Blue Glow (4s pulse animation) -->
+                <View
+                    android:id="@+id/ambientGlow"
+                    android:layout_width="240dp"
+                    android:layout_height="240dp"
+                    android:layout_gravity="center"
+                    android:alpha="0.6"
+                    android:background="@drawable/bg_profile_glow" />
+
+                <!-- Profile Card (192dp x 256dp, 24dp radius, shadow, -2deg tilt) -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/profileCard"
+                    android:layout_width="192dp"
+                    android:layout_height="256dp"
+                    android:layout_gravity="center"
+                    android:rotation="-2"
+                    app:cardBackgroundColor="@color/surface_container_lowest"
+                    app:cardCornerRadius="24dp"
+                    app:cardElevation="8dp"
+                    app:cardMaxElevation="12dp"
+                    app:cardPreventCornerOverlap="false"
+                    app:strokeWidth="0dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center_horizontal"
+                        android:orientation="vertical"
+                        android:paddingStart="20dp"
+                        android:paddingTop="20dp"
+                        android:paddingEnd="20dp"
+                        android:paddingBottom="20dp">
+
+                        <!-- Avatar Circle (64dp x 64dp with centered person icon) -->
+                        <FrameLayout
+                            android:id="@+id/avatarContainer"
+                            android:layout_width="64dp"
+                            android:layout_height="64dp"
+                            android:layout_marginTop="8dp"
+                            android:layout_marginBottom="24dp"
+                            android:background="@drawable/bg_avatar_circle">
+
+                            <ImageView
+                                android:layout_width="32dp"
+                                android:layout_height="32dp"
+                                android:layout_gravity="center"
+                                android:contentDescription="@null"
+                                android:src="@drawable/ic_person" />
+                        </FrameLayout>
+
+                        <!-- Skeleton Details Stack -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_horizontal"
+                            android:orientation="vertical">
+
+                            <!-- Name Placeholder (75% width, 16dp height, rounded) -->
+                            <View
+                                android:id="@+id/skeletonName"
+                                android:layout_width="110dp"
+                                android:layout_height="14dp"
+                                android:layout_marginBottom="8dp"
+                                android:background="@drawable/bg_skeleton_bar" />
+
+                            <!-- Role Placeholder (50% width, 12dp height, 50% opacity) -->
+                            <View
+                                android:id="@+id/skeletonRole"
+                                android:layout_width="75dp"
+                                android:layout_height="10dp"
+                                android:layout_marginBottom="16dp"
+                                android:alpha="0.5"
+                                android:background="@drawable/bg_skeleton_bar" />
+
+                            <!-- Detail Placeholder lines (30% opacity, 8dp vertical spacing) -->
+                            <View
+                                android:id="@+id/skeletonDetail1"
+                                android:layout_width="match_parent"
+                                android:layout_height="6dp"
+                                android:layout_marginBottom="6dp"
+                                android:alpha="0.3"
+                                android:background="@drawable/bg_skeleton_bar" />
+
+                            <View
+                                android:id="@+id/skeletonDetail2"
+                                android:layout_width="120dp"
+                                android:layout_height="6dp"
+                                android:layout_gravity="start"
+                                android:layout_marginBottom="6dp"
+                                android:alpha="0.3"
+                                android:background="@drawable/bg_skeleton_bar" />
+
+                            <View
+                                android:id="@+id/skeletonDetail3"
+                                android:layout_width="95dp"
+                                android:layout_height="6dp"
+                                android:layout_gravity="start"
+                                android:alpha="0.3"
+                                android:background="@drawable/bg_skeleton_bar" />
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Floating Verified Badge (48dp x 48dp, +12deg tilt, vertical bounce) -->
+                <FrameLayout
+                    android:id="@+id/verifiedBadge"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="top|end"
+                    android:layout_marginTop="32dp"
+                    android:layout_marginEnd="32dp"
+                    android:background="@drawable/bg_verified_badge"
+                    android:contentDescription="@string/cd_verified_badge"
+                    android:elevation="12dp"
+                    android:rotation="12">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_verified" />
+                </FrameLayout>
+
+            </FrameLayout>
+
+            <!-- Typography Section -->
+            <TextView
+                android:id="@+id/tvProfileTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:fontFamily="@font/inter_semibold"
+                android:includeFontPadding="false"
+                android:letterSpacing="-0.01"
+                android:lineHeight="28sp"
+                android:text="@string/onboarding_profile_creation_title"
+                android:textAlignment="center"
+                android:textColor="@color/on_surface"
+                android:textSize="22sp"
+                tools:targetApi="p" />
+
+            <TextView
+                android:id="@+id/tvProfileDesc"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/inter_regular"
+                android:includeFontPadding="false"
+                android:lineHeight="20sp"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:text="@string/onboarding_profile_creation_description"
+                android:textAlignment="center"
+                android:textColor="@color/on_surface_variant"
+                android:textSize="14sp"
+                tools:targetApi="p" />
+
+        </LinearLayout>
+
+        <!-- Bottom Action Area (Next & Skip buttons) -->
+        <LinearLayout
+            android:id="@+id/bottomActionLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="20dp"
+            android:paddingTop="24dp"
+            android:paddingEnd="20dp"
+            android:paddingBottom="32dp">
+
+            <!-- Primary "Next" Button (48dp min-height, 16dp radius, primary blue) -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnNext"
+                style="@style/Widget.ProPass.Button.Primary16"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_marginBottom="8dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:text="@string/btn_next"
+                app:icon="@drawable/ic_arrow_forward"
+                app:iconGravity="textEnd"
+                app:iconPadding="6dp" />
+
+            <!-- Secondary "Skip" Button (48dp min-height, 16dp radius, transparent) -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSkip"
+                style="@style/Widget.ProPass.Button.Text16"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:text="@string/btn_skip" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</androidx.core.widget.NestedScrollView>
