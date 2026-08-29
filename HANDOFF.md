@@ -293,22 +293,28 @@ From [`gradle/libs.versions.toml`](file:///home/divy/AndroidProjects/ProPass/gra
 
 ### Backend Sources (`backend/`):
 * `src/server.ts` — Fastify server startup entrypoint.
-* `src/app.ts` — Fastify application factory with Helmet, CORS, health routes, and auth routes.
+* `src/app.ts` — Fastify application factory with Helmet, CORS, health, auth, user, and dashboard routes.
 * `src/config/env.ts` — Zod environment variable parser (Port, Database, JWT config).
 * `src/config/prisma.ts` — Singleton PrismaClient client connection.
 * `src/controllers/health.controller.ts` — System health and database connectivity controller.
 * `src/controllers/auth.controller.ts` — Authentication controller (Register, Login, Refresh, Logout, Me).
+* `src/controllers/user.controller.ts` — User Profile & Dashboard controller (GetProfile, UpdateProfile, GetDashboard).
 * `src/services/auth.service.ts` — Authentication service with Argon2 hashing and token rotation.
+* `src/services/user.service.ts` — User Profile management, completion score calculation, and aggregated Dashboard service.
 * `src/middleware/auth.middleware.ts` — Fastify JWT authentication guard decorator (`authenticate`).
 * `src/models/auth.schema.ts` — Zod validation schemas for registration, login, and refresh.
+* `src/models/user.schema.ts` — Zod validation schemas for profile updates.
 * `src/utils/crypto.ts` — Argon2id password hashing, verification, secure token generation, and SHA-256 token hashing.
 * `src/utils/jwt.ts` — JWT access token generation and verification.
 * `src/routes/health.routes.ts` — Health check endpoint routes (`/health`, `/api/health`).
 * `src/routes/auth.routes.ts` — Authentication routes (`/api/v1/auth/register`, `/login`, `/refresh`, `/logout`, `/me`).
+* `src/routes/user.routes.ts` — User profile routes (`/api/v1/users/profile`).
+* `src/routes/dashboard.routes.ts` — Home dashboard route (`/api/v1/dashboard`).
 * `prisma/schema.prisma` — PostgreSQL database schema (User, Profile, DigitalPass, Event, Registration, RefreshToken).
 * `prisma/seed.ts` — Database seeder (TechConf 2024, Google Office Visit, Android Conf 2026, and demo accounts).
 * `tests/health.test.ts` — Vitest integration tests for API foundation.
-* `tests/auth.test.ts` — Comprehensive Vitest test suite for Authentication (Register, Login, JWT, Refresh rotation, Logout).
+* `tests/auth.test.ts` — Vitest test suite for Authentication (14 test cases).
+* `tests/user.test.ts` — Vitest test suite for User Profile & Dashboard (8 test cases).
 * `docker-compose.yml` — PostgreSQL 16 Alpine container with persistent volume.
 * `Dockerfile` — Multi-stage production container build for Node.js backend.
 
@@ -334,8 +340,9 @@ From [`gradle/libs.versions.toml`](file:///home/divy/AndroidProjects/ProPass/gra
 ### Unit Tests:
 * `app/src/test/java/com/mpc/propass/ProPassQrValidationTest.kt` — Android unit tests for ProPass QR regex validation and URL parsing.
 * `app/src/test/java/com/mpc/propass/ExampleUnitTest.kt` — Basic Android host unit test.
-* `backend/tests/health.test.ts` — Backend Fastify health check and application test suite.
+* `backend/tests/health.test.ts` — Backend Fastify health check and application test suite (2 tests passed).
 * `backend/tests/auth.test.ts` — Backend authentication test suite (14 tests passed).
+* `backend/tests/user.test.ts` — Backend user profile & dashboard test suite (8 tests passed).
 
 ---
 
@@ -387,7 +394,7 @@ npm run dev
 
 ## 15. Known Limitations (Current Phase)
 
-1. **Backend Endpoints:** Phase 2A implemented Authentication (`/api/v1/auth/*`) and Health (`/health`). User/Profile, Events, Registrations, and Digital Pass REST endpoints belong to subsequent Phase 2 milestones.
+1. **Backend Endpoints:** Phase 2A/2B implemented Authentication (`/api/v1/auth/*`), User/Profile (`/api/v1/users/profile`), Dashboard (`/api/v1/dashboard`), and Health (`/health`). Events, Registrations, and Digital Pass REST endpoints belong to subsequent Phase 2 milestones.
 2. **Android Network Integration:** Android client currently runs on local mock data until Phase 3/4 integration with Retrofit 2.
 3. **Mock Actions:** External wallet export, social sharing, and contact buttons on Android generate UI Toast feedback.
 
@@ -408,7 +415,11 @@ All listed features have been executed and verified on physical hardware & devel
   * Argon2id password hashing and validation implemented.
   * JWT access token (15m) and secure persistent refresh token (7d SHA-256 hashed) rotation implemented.
   * `POST /api/v1/auth/register` (201 Created), `POST /api/v1/auth/login` (200 OK), `POST /api/v1/auth/refresh` (200 OK), `POST /api/v1/auth/logout` (200 OK), `GET /api/v1/auth/me` (200 OK).
-  * 16/16 Vitest automated unit/integration tests passed.
+* [x] **Backend User & Profile API (Phase 2B):**
+  * `GET /api/v1/users/profile` (200 OK) retrieves authenticated user profile and safe account details.
+  * `PUT /api/v1/users/profile` (200 OK) updates profile fields and dynamically calculates `completionScore` on the backend.
+  * `GET /api/v1/dashboard` (200 OK) aggregates live PostgreSQL data: greeting, user info, profile details, digital pass summary, and recent event activities.
+  * 24/24 Vitest automated tests passed across all 3 test suites.
 
 ---
 
@@ -416,7 +427,7 @@ All listed features have been executed and verified on physical hardware & devel
 
 * [x] **Phase 1: Backend Foundation & Database Setup** (Completed)
 * [x] **Phase 2A: Authentication System** (Completed)
-* [ ] **Phase 2B: User & Profile API** (`GET /profile`, `PUT /profile`, `GET /dashboard`)
+* [x] **Phase 2B: User & Profile API** (Completed)
 * [ ] **Phase 2C: Event & QR Validation API** (`GET /events/:id`, `POST /events/validate-qr`)
 * [ ] **Phase 2D: Registration API** (`POST /registrations`, `GET /registrations/my`)
 * [ ] **Phase 2E: Digital Pass API** (`GET /passes/me`, signed QR token generator)
@@ -428,7 +439,8 @@ All listed features have been executed and verified on physical hardware & devel
 
 ## 18. Current Stopping Point
 
-> **Phase 2A Complete:** Secure Authentication System (Argon2id, JWT, Refresh Token Rotation, Auth Guard) implemented, tested, and verified. Fastify server, PostgreSQL database, and Android build healthy. Ready for Phase 2B upon user approval.  
+> **Phase 2B Complete:** User Profile & Home Dashboard APIs implemented, tested, and verified against PostgreSQL database. 24/24 tests passing. Android build clean. Ready for Phase 2C upon user approval.  
 > *Updated on: August 29, 2026*
+
 
 
