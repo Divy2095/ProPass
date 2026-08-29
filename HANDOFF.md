@@ -293,7 +293,7 @@ From [`gradle/libs.versions.toml`](file:///home/divy/AndroidProjects/ProPass/gra
 
 ### Backend Sources (`backend/`):
 * `src/server.ts` — Fastify server startup entrypoint.
-* `src/app.ts` — Fastify application factory with Helmet, CORS, health, auth, user, dashboard, event, and registration routes.
+* `src/app.ts` — Fastify application factory with Helmet, CORS, health, auth, user, dashboard, event, registration, and pass routes.
 * `src/config/env.ts` — Zod environment variable parser (Port, Database, JWT config).
 * `src/config/prisma.ts` — Singleton PrismaClient client connection.
 * `src/controllers/health.controller.ts` — System health and database connectivity controller.
@@ -301,15 +301,18 @@ From [`gradle/libs.versions.toml`](file:///home/divy/AndroidProjects/ProPass/gra
 * `src/controllers/user.controller.ts` — User Profile & Dashboard controller (GetProfile, UpdateProfile, GetDashboard).
 * `src/controllers/event.controller.ts` — Event & QR validation controller (GetEvent, ValidateQr).
 * `src/controllers/registration.controller.ts` — Event registration controller (CreateRegistration, GetMyRegistrations).
+* `src/controllers/pass.controller.ts` — Digital Pass controller (GetMyPass).
 * `src/services/auth.service.ts` — Authentication service with Argon2 hashing and token rotation.
 * `src/services/user.service.ts` — User Profile management, completion score calculation, and aggregated Dashboard service.
 * `src/services/event.service.ts` — ProPass QR regex parser, event metadata retrieval, and active event validator.
 * `src/services/registration.service.ts` — Event registration persistence, max duration validation, duplicate prevention, and snapshot management.
+* `src/services/pass.service.ts` — Digital Pass retrieval, active/expiration calculation, and profile association service.
 * `src/middleware/auth.middleware.ts` — Fastify JWT authentication guard decorator (`authenticate`).
 * `src/models/auth.schema.ts` — Zod validation schemas for registration, login, and refresh.
 * `src/models/user.schema.ts` — Zod validation schemas for profile updates.
 * `src/models/event.schema.ts` — Zod validation schemas for QR validation (`validateQrSchema`) and event params (`eventParamsSchema`).
 * `src/models/registration.schema.ts` — Zod validation schema for event registrations (`createRegistrationSchema`).
+* `src/models/pass.schema.ts` — Digital Pass DTO definitions (`DigitalPassDto`, `PassHolderDto`, `MyPassResponse`).
 * `src/utils/crypto.ts` — Argon2id password hashing, verification, secure token generation, and SHA-256 token hashing.
 * `src/utils/jwt.ts` — JWT access token generation and verification.
 * `src/routes/health.routes.ts` — Health check endpoint routes (`/health`, `/api/health`).
@@ -318,6 +321,7 @@ From [`gradle/libs.versions.toml`](file:///home/divy/AndroidProjects/ProPass/gra
 * `src/routes/dashboard.routes.ts` — Home dashboard route (`/api/v1/dashboard`).
 * `src/routes/event.routes.ts` — Event routes (`/api/v1/events/:eventId`, `/api/v1/events/validate-qr`).
 * `src/routes/registration.routes.ts` — Registration routes (`/api/v1/registrations`, `/api/v1/registrations/my`).
+* `src/routes/pass.routes.ts` — Digital Pass routes (`/api/v1/passes/me`).
 * `prisma/schema.prisma` — PostgreSQL database schema (User, Profile, DigitalPass, Event, Registration, RefreshToken).
 * `prisma/seed.ts` — Database seeder (TechConf 2024, Google Office Visit, Android Conf 2026, and demo accounts).
 * `tests/health.test.ts` — Vitest integration tests for API foundation (2 tests passed).
@@ -325,6 +329,7 @@ From [`gradle/libs.versions.toml`](file:///home/divy/AndroidProjects/ProPass/gra
 * `tests/user.test.ts` — Vitest test suite for User Profile & Dashboard (8 test cases).
 * `tests/event.test.ts` — Vitest test suite for Event catalog & QR validation (18 test cases).
 * `tests/registration.test.ts` — Vitest test suite for Event Registration (20 test cases).
+* `tests/pass.test.ts` — Vitest test suite for Digital Pass (10 test cases).
 * `docker-compose.yml` — PostgreSQL 16 Alpine container with persistent volume.
 * `Dockerfile` — Multi-stage production container build for Node.js backend.
 
@@ -355,6 +360,7 @@ From [`gradle/libs.versions.toml`](file:///home/divy/AndroidProjects/ProPass/gra
 * `backend/tests/user.test.ts` — Backend user profile & dashboard test suite (8 tests passed).
 * `backend/tests/event.test.ts` — Backend event catalog & QR validation test suite (18 tests passed).
 * `backend/tests/registration.test.ts` — Backend event registration test suite (20 tests passed).
+* `backend/tests/pass.test.ts` — Backend digital pass test suite (10 tests passed).
 
 ---
 
@@ -406,7 +412,7 @@ npm run dev
 
 ## 15. Known Limitations (Current Phase)
 
-1. **Backend Endpoints:** Phase 2A/2B/2C/2D implemented Authentication (`/api/v1/auth/*`), User/Profile (`/api/v1/users/profile`), Dashboard (`/api/v1/dashboard`), Event Catalog & QR Validation (`/api/v1/events/*`), Registration (`/api/v1/registrations/*`), and Health (`/health`). Digital Pass credential APIs belong to subsequent Phase 2 milestones.
+1. **Backend Complete (Phase 2):** All Core Backend Services (Auth, User/Profile, Dashboard, Events, QR Validation, Registrations, Digital Pass, Health) are implemented, tested, and validated against PostgreSQL.
 2. **Android Network Integration:** Android client currently runs on local mock data until Phase 3/4 integration with Retrofit 2.
 3. **Mock Actions:** External wallet export, social sharing, and contact buttons on Android generate UI Toast feedback.
 
@@ -437,7 +443,9 @@ All listed features have been executed and verified on physical hardware & devel
 * [x] **Backend Registration API (Phase 2D):**
   * `POST /api/v1/registrations` (201 Created) persists event registrations in PostgreSQL, enforces maximum event duration limits, prevents duplicate registrations (409 Conflict), and stores registration snapshot data.
   * `GET /api/v1/registrations/my` (200 OK) returns authenticated user's registration history with attached event details.
-  * 62/62 Vitest automated tests passed across all 5 test suites (100% pass rate).
+* [x] **Backend Digital Pass API (Phase 2E):**
+  * `GET /api/v1/passes/me` (200 OK) retrieves authenticated user's active Digital Pass with calculated expiration status, pass tier, QR payload, and verified holder profile details.
+  * 72/72 Vitest automated tests passed across all 6 test suites (100% pass rate).
 
 ---
 
@@ -448,7 +456,7 @@ All listed features have been executed and verified on physical hardware & devel
 * [x] **Phase 2B: User & Profile API** (Completed)
 * [x] **Phase 2C: Event & QR Validation API** (Completed)
 * [x] **Phase 2D: Registration API** (Completed)
-* [ ] **Phase 2E: Digital Pass API** (`GET /passes/me`, signed QR token generator)
+* [x] **Phase 2E: Digital Pass API** (Completed)
 * [ ] **Phase 3: Android Network Client & Data Layer** (Retrofit 2, OkHttp 3, Moshi, DataStore)
 * [ ] **Phase 4: Frontend Screen Integration & Mock Replacement**
 * [ ] **Phase 5: End-to-End Testing & Physical Device Verification**
@@ -457,8 +465,9 @@ All listed features have been executed and verified on physical hardware & devel
 
 ## 18. Current Stopping Point
 
-> **Phase 2D Complete:** Event Registration API implemented, tested, and verified against PostgreSQL database. 62/62 tests passing. Android build clean. Ready for Phase 2E upon user approval.  
+> **Phase 2E Complete:** Digital Pass API implemented, tested, and verified against PostgreSQL database. Phase 2 Core Backend Services are 100% complete with 72/72 passing tests. Android build clean. Ready for Phase 3 upon user approval.  
 > *Updated on: August 29, 2026*
+
 
 
 
