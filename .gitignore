@@ -15,3 +15,11 @@
 local.properties
 /.idea/
 /.agents/
+
+# Node / Backend
+backend/node_modules/
+backend/dist/
+backend/.env
+backend/.env.local
+backend/coverage/
+*.log

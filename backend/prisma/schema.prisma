@@ -1,0 +1,133 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  USER
+  ADMIN
+  ORGANIZER
+}
+
+enum PurposeOfVisit {
+  GENERAL_ATTENDEE
+  SPEAKER
+  SPONSOR_EXHIBITOR
+  MEDIA_PRESS
+}
+
+enum RegistrationStatus {
+  CONFIRMED
+  PENDING
+  CHECKED_IN
+  CANCELLED
+}
+
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  passwordHash  String?
+  googleId      String?        @unique
+  role          Role           @default(USER)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  profile       Profile?
+  digitalPass   DigitalPass?
+  registrations Registration[]
+  refreshTokens RefreshToken[]
+
+  @@map("users")
+}
+
+model Profile {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  fullName        String
+  title           String?  // e.g. "Senior UX Researcher"
+  organization    String?  // e.g. "TechFlow Inc." / "University of Technology"
+  phone           String?  // e.g. "+1 (555) 019-2834"
+  linkedinUrl     String?
+  avatarUrl       String?
+  isVerified      Boolean  @default(false)
+  completionScore Int      @default(85)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("profiles")
+}
+
+model DigitalPass {
+  id           String    @id @default(uuid())
+  userId       String    @unique
+  passNumber   String    @unique // e.g. "PP-2024-8849"
+  qrPayload    String    // Cryptographically signed pass token or unique identifier
+  tier         String    @default("PREMIUM")
+  isActive     Boolean   @default(true)
+  expiresAt    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("digital_passes")
+}
+
+model Event {
+  id             String         @id @default(uuid())
+  slug           String         @unique // e.g. "techconf-2024"
+  title          String         // e.g. "TechConf 2024"
+  overline       String         @default("EVENT REGISTRATION")
+  subtitle       String         // e.g. "Complete your registration to secure your spot."
+  description    String?
+  location       String?
+  startDate      DateTime
+  endDate        DateTime
+  maxDuration    Int            @default(5)
+  isActive       Boolean        @default(true)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  registrations  Registration[]
+
+  @@map("events")
+}
+
+model Registration {
+  id             String             @id @default(uuid())
+  userId         String
+  eventId        String
+  fullName       String
+  email          String
+  institution    String
+  purpose        PurposeOfVisit
+  durationDays   Int
+  vehicleNumber  String?
+  status         RegistrationStatus @default(CONFIRMED)
+  registeredAt   DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event          Event              @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventId])
+  @@map("registrations")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  tokenHash String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}

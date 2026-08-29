@@ -291,6 +291,19 @@ From [`gradle/libs.versions.toml`](file:///home/divy/AndroidProjects/ProPass/gra
 * `CircularProgressView.kt` — Custom Canvas view for smooth circular profile progress.
 * `RegistrationData.kt` — Serializable data model for event registration details.
 
+### Backend Sources (`backend/`):
+* `src/server.ts` — Fastify server startup entrypoint.
+* `src/app.ts` — Fastify application factory with Helmet, CORS, and route registration.
+* `src/config/env.ts` — Zod environment variable parser.
+* `src/config/prisma.ts` — Singleton PrismaClient client connection.
+* `src/controllers/health.controller.ts` — System health and database connectivity controller.
+* `src/routes/health.routes.ts` — Health check endpoint routes (`/health`, `/api/health`).
+* `prisma/schema.prisma` — PostgreSQL database schema (User, Profile, DigitalPass, Event, Registration, RefreshToken).
+* `prisma/seed.ts` — Database seeder (TechConf 2024, Google Office Visit, Android Conf 2026, and demo accounts).
+* `tests/health.test.ts` — Vitest integration tests for API foundation.
+* `docker-compose.yml` — PostgreSQL 16 Alpine container with persistent volume.
+* `Dockerfile` — Multi-stage production container build for Node.js backend.
+
 ### Layout XML Files (`app/src/main/res/layout/`):
 * `activity_splash.xml`
 * `activity_login.xml`
@@ -311,8 +324,9 @@ From [`gradle/libs.versions.toml`](file:///home/divy/AndroidProjects/ProPass/gra
 * `app/src/main/AndroidManifest.xml` — Activity declarations, camera permissions, and feature tags.
 
 ### Unit Tests:
-* `app/src/test/java/com/mpc/propass/ProPassQrValidationTest.kt` — Unit tests for ProPass QR regex validation and URL parsing.
-* `app/src/test/java/com/mpc/propass/ExampleUnitTest.kt` — Basic host unit test.
+* `app/src/test/java/com/mpc/propass/ProPassQrValidationTest.kt` — Android unit tests for ProPass QR regex validation and URL parsing.
+* `app/src/test/java/com/mpc/propass/ExampleUnitTest.kt` — Basic Android host unit test.
+* `backend/tests/health.test.ts` — Backend Fastify health check and application test suite.
 
 ---
 
@@ -324,71 +338,88 @@ From [`gradle/libs.versions.toml`](file:///home/divy/AndroidProjects/ProPass/gra
 * **Important `.gitignore` Rules:**
   * Standard Android Gradle build artifacts (`/build`, `.gradle`, `*.iml`, `local.properties`).
   * `/.agents/` is explicitly gitignored because it previously contained GCP API secrets.
+  * Backend local artifacts (`backend/node_modules/`, `backend/dist/`, `backend/.env`, `backend/coverage/`).
 
 > [!CAUTION]
 > **CRITICAL SECURITY RULE:** Never commit API keys, GCP credentials, service account JSON files, or secrets into this repository or this file.
 
 ---
 
-## 14. Known Limitations (Frontend Phase)
+## 14. Backend Quick Start Guide (For Developers)
 
-1. **No Network Layer:** Form submission, QR parsing, and event info are processed purely on-device with local mock models.
-2. **Static Identity:** The auto-filled user profile is statically initialized (`Alex Morgan` / `Sarah Jenkins`) until the user profile API is connected.
-3. **Mock Actions:** External wallet export, social sharing, and contact buttons generate UI Toast feedback rather than deep-linking to external service APIs.
-4. **Offline Only:** Event IDs are matched against a hardcoded local map with a Title-Case slug fallback.
+To run the backend development environment:
 
----
+```bash
+# 1. Navigate to backend
+cd backend
 
-## 15. Physical Device Verification Summary
+# 2. Configure environment (if not already present)
+cp .env.example .env
 
-All listed features have been executed and verified on physical hardware (`KVAMAAXSPNOV7PXC`):
+# 3. Start PostgreSQL container
+docker compose up -d
 
-* [x] **Gradle Build & Assemble:** `./gradlew assembleDebug` builds in under 3s with 0 errors.
-* [x] **Live Camera Viewfinder:** Rear camera stream renders smoothly through `PreviewView` with proper aspect ratio underneath the reticle frame.
-* [x] **Physical Torch:** Real device LED toggles ON/OFF with matching amber UI feedback.
-* [x] **Real-Time QR Detection:** Google ML Kit detects real QR codes from live camera feed.
-* [x] **QR Format Validation:** Random URLs and invalid QR codes are rejected with a debounced Toast; valid `propass.id/event/<id>` codes immediately trigger haptic feedback and navigation.
-* [x] **Smart Form Validation:** Prevents submission on empty required fields or invalid duration (> 5); highlights errors with red borders.
-* [x] **Review & Edit Preservation:** Review screen displays exact form values; "Back / Edit" returns to the form with all entered values preserved.
-* [x] **Success & Navigation:** Success badge animates; "View My Pass" and "Go Home" route to destinations with clean backstack handling.
+# 4. Install dependencies
+npm install
 
----
+# 5. Run Prisma migrations & seed database
+npx prisma migrate dev
+npm run prisma:seed
 
-## 16. Next Development Phase: Backend Implementation
+# 6. Run test suite
+npm test
 
-The next major milestone is **Backend Implementation & Integration**. Recommended roadmap:
-
-1. **Backend Initialization:** Initialize Node.js + TypeScript project repository.
-2. **Database & Schema Setup:** Configure PostgreSQL with Prisma (User, Event, Registration, Pass models).
-3. **Authentication Endpoints:** Implement `/api/auth/login`, `/api/auth/register`, `/api/auth/google`.
-4. **Event & QR Endpoints:**
-   * `GET /api/events/:eventId` — Returns event metadata.
-   * `POST /api/events/:eventId/validate-qr` — Validates event QR tokens.
-5. **Registration API:** `POST /api/registrations` — Submits and persists user event registrations.
-6. **Digital Pass API:** `GET /api/pass/me` — Fetches current user's digital pass and credentials.
-7. **Android Retrofit Layer:**
-   * Add Retrofit 2, OkHttp 3, and Kotlinx Serialization to `build.gradle.kts`.
-   * Create ApiService, Repository layer, and ViewModel architecture.
-   * Replace local mock data with real asynchronous network calls.
-8. **End-to-End Testing:** Verify live QR scanning ➔ backend validation ➔ live database persistence ➔ pass update on physical device.
+# 7. Start development server
+npm run dev
+# (Server listens on http://localhost:3000, verify via http://localhost:3000/health)
+```
 
 ---
 
-## 17. Instructions for Future Antigravity Sessions
+## 15. Known Limitations (Current Phase)
 
-When continuing work on this project in a new Antigravity session:
+1. **Backend Endpoints:** Currently implemented foundation includes `GET /` and `GET /health` with live PostgreSQL database connectivity. Phase 2 will implement Auth, User/Profile, Events, Registrations, and Digital Pass REST endpoints.
+2. **Android Network Integration:** Android client currently runs on local mock data until Phase 3/4 integration with Retrofit 2.
+3. **Mock Actions:** External wallet export, social sharing, and contact buttons on Android generate UI Toast feedback.
 
-1. **Read this `HANDOFF.md` first** before taking any action.
-2. **Inspect the actual codebase** to confirm current file locations and dependencies.
-3. **Preserve existing UI:** Do not redesign or break the established XML layouts, custom views, or color palette unless explicitly instructed.
-4. **No Fake Backend:** When implementing the backend, build real endpoints, databases, and network clients—do not add temporary mock layers.
-5. **Security First:** Never commit secrets, API keys, or GCP credentials to Git.
-6. **Verify with Tests & Builds:** Run `./gradlew test` and `./gradlew assembleDebug` after making code changes.
-7. **Keep Documentation Updated:** Update `HANDOFF.md` whenever new architecture, backend APIs, or major features are introduced.
+---
+
+## 16. Verification Summary
+
+All listed features have been executed and verified on physical hardware & development environment:
+
+* [x] **Android Gradle Build:** `./gradlew assembleDebug` builds with 0 errors.
+* [x] **Android Physical Device Features:** Live CameraX viewfinder, physical torch, ML Kit QR detection, QR validation, Smart Form validation, Review & Success flows verified on device `KVAMAAXSPNOV7PXC`.
+* [x] **Backend Foundation (Phase 1):**
+  * Node.js v22 + TypeScript + Fastify + Prisma initialized.
+  * PostgreSQL 16 container running and healthy via Docker Compose.
+  * Prisma schema valid, migration `20260829150427_init` applied.
+  * Seed data populated for TechConf 2024, Google Office Visit, Android Conf 2026, and 3 demo user profiles/passes.
+  * Fastify `GET /health` responds `200 OK` with live `database: "connected"`.
+  * Vitest test suite passes (2/2 tests passed).
+
+---
+
+## 17. Development Roadmap
+
+* [x] **Phase 1: Backend Foundation & Database Setup** (Completed)
+* [ ] **Phase 2: Core Backend Services & API Endpoints** (Next)
+  * Authentication Service (JWT, Argon2 hashing, Refresh token rotation)
+  * User & Profile API (`GET /profile`, `PUT /profile`, `GET /dashboard`)
+  * Event & QR Validation API (`GET /events/:id`, `POST /events/validate-qr`)
+  * Registration API (`POST /registrations`, `GET /registrations/my`)
+  * Digital Pass API (`GET /passes/me`, signed QR token generator)
+* [ ] **Phase 3: Android Network Client & Data Layer**
+  * Retrofit 2, OkHttp 3, Moshi, and Encrypted DataStore dependencies.
+  * ApiService interfaces, Repository layer, and TokenAuthenticator.
+* [ ] **Phase 4: Frontend Screen Integration & Mock Replacement**
+  * Connect LoginActivity, ScanQRActivity, SmartFormRegistrationActivity, ReviewRegistrationActivity, HomeDashboardActivity, DigitalPassActivity.
+* [ ] **Phase 5: End-to-End Testing & Physical Device Verification**
 
 ---
 
 ## 18. Current Stopping Point
 
-> **Frontend phase complete. Android application is functional and physically verified. Backend implementation is the next major phase.**  
-> *Generated on: August 27, 2026*
+> **Phase 1 Complete:** Backend foundation, TypeScript Fastify server, PostgreSQL Docker setup, Prisma models, migrations, seed data, and health check verified. Ready for Phase 2 API implementation upon user approval.  
+> *Updated on: August 29, 2026*
+
