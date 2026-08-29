@@ -293,14 +293,22 @@ From [`gradle/libs.versions.toml`](file:///home/divy/AndroidProjects/ProPass/gra
 
 ### Backend Sources (`backend/`):
 * `src/server.ts` — Fastify server startup entrypoint.
-* `src/app.ts` — Fastify application factory with Helmet, CORS, and route registration.
-* `src/config/env.ts` — Zod environment variable parser.
+* `src/app.ts` — Fastify application factory with Helmet, CORS, health routes, and auth routes.
+* `src/config/env.ts` — Zod environment variable parser (Port, Database, JWT config).
 * `src/config/prisma.ts` — Singleton PrismaClient client connection.
 * `src/controllers/health.controller.ts` — System health and database connectivity controller.
+* `src/controllers/auth.controller.ts` — Authentication controller (Register, Login, Refresh, Logout, Me).
+* `src/services/auth.service.ts` — Authentication service with Argon2 hashing and token rotation.
+* `src/middleware/auth.middleware.ts` — Fastify JWT authentication guard decorator (`authenticate`).
+* `src/models/auth.schema.ts` — Zod validation schemas for registration, login, and refresh.
+* `src/utils/crypto.ts` — Argon2id password hashing, verification, secure token generation, and SHA-256 token hashing.
+* `src/utils/jwt.ts` — JWT access token generation and verification.
 * `src/routes/health.routes.ts` — Health check endpoint routes (`/health`, `/api/health`).
+* `src/routes/auth.routes.ts` — Authentication routes (`/api/v1/auth/register`, `/login`, `/refresh`, `/logout`, `/me`).
 * `prisma/schema.prisma` — PostgreSQL database schema (User, Profile, DigitalPass, Event, Registration, RefreshToken).
 * `prisma/seed.ts` — Database seeder (TechConf 2024, Google Office Visit, Android Conf 2026, and demo accounts).
 * `tests/health.test.ts` — Vitest integration tests for API foundation.
+* `tests/auth.test.ts` — Comprehensive Vitest test suite for Authentication (Register, Login, JWT, Refresh rotation, Logout).
 * `docker-compose.yml` — PostgreSQL 16 Alpine container with persistent volume.
 * `Dockerfile` — Multi-stage production container build for Node.js backend.
 
@@ -327,6 +335,7 @@ From [`gradle/libs.versions.toml`](file:///home/divy/AndroidProjects/ProPass/gra
 * `app/src/test/java/com/mpc/propass/ProPassQrValidationTest.kt` — Android unit tests for ProPass QR regex validation and URL parsing.
 * `app/src/test/java/com/mpc/propass/ExampleUnitTest.kt` — Basic Android host unit test.
 * `backend/tests/health.test.ts` — Backend Fastify health check and application test suite.
+* `backend/tests/auth.test.ts` — Backend authentication test suite (14 tests passed).
 
 ---
 
@@ -378,7 +387,7 @@ npm run dev
 
 ## 15. Known Limitations (Current Phase)
 
-1. **Backend Endpoints:** Currently implemented foundation includes `GET /` and `GET /health` with live PostgreSQL database connectivity. Phase 2 will implement Auth, User/Profile, Events, Registrations, and Digital Pass REST endpoints.
+1. **Backend Endpoints:** Phase 2A implemented Authentication (`/api/v1/auth/*`) and Health (`/health`). User/Profile, Events, Registrations, and Digital Pass REST endpoints belong to subsequent Phase 2 milestones.
 2. **Android Network Integration:** Android client currently runs on local mock data until Phase 3/4 integration with Retrofit 2.
 3. **Mock Actions:** External wallet export, social sharing, and contact buttons on Android generate UI Toast feedback.
 
@@ -393,33 +402,33 @@ All listed features have been executed and verified on physical hardware & devel
 * [x] **Backend Foundation (Phase 1):**
   * Node.js v22 + TypeScript + Fastify + Prisma initialized.
   * PostgreSQL 16 container running and healthy via Docker Compose.
-  * Prisma schema valid, migration `20260829150427_init` applied.
-  * Seed data populated for TechConf 2024, Google Office Visit, Android Conf 2026, and 3 demo user profiles/passes.
+  * Prisma schema valid, migration applied, seed data populated.
   * Fastify `GET /health` responds `200 OK` with live `database: "connected"`.
-  * Vitest test suite passes (2/2 tests passed).
+* [x] **Backend Authentication (Phase 2A):**
+  * Argon2id password hashing and validation implemented.
+  * JWT access token (15m) and secure persistent refresh token (7d SHA-256 hashed) rotation implemented.
+  * `POST /api/v1/auth/register` (201 Created), `POST /api/v1/auth/login` (200 OK), `POST /api/v1/auth/refresh` (200 OK), `POST /api/v1/auth/logout` (200 OK), `GET /api/v1/auth/me` (200 OK).
+  * 16/16 Vitest automated unit/integration tests passed.
 
 ---
 
 ## 17. Development Roadmap
 
 * [x] **Phase 1: Backend Foundation & Database Setup** (Completed)
-* [ ] **Phase 2: Core Backend Services & API Endpoints** (Next)
-  * Authentication Service (JWT, Argon2 hashing, Refresh token rotation)
-  * User & Profile API (`GET /profile`, `PUT /profile`, `GET /dashboard`)
-  * Event & QR Validation API (`GET /events/:id`, `POST /events/validate-qr`)
-  * Registration API (`POST /registrations`, `GET /registrations/my`)
-  * Digital Pass API (`GET /passes/me`, signed QR token generator)
-* [ ] **Phase 3: Android Network Client & Data Layer**
-  * Retrofit 2, OkHttp 3, Moshi, and Encrypted DataStore dependencies.
-  * ApiService interfaces, Repository layer, and TokenAuthenticator.
+* [x] **Phase 2A: Authentication System** (Completed)
+* [ ] **Phase 2B: User & Profile API** (`GET /profile`, `PUT /profile`, `GET /dashboard`)
+* [ ] **Phase 2C: Event & QR Validation API** (`GET /events/:id`, `POST /events/validate-qr`)
+* [ ] **Phase 2D: Registration API** (`POST /registrations`, `GET /registrations/my`)
+* [ ] **Phase 2E: Digital Pass API** (`GET /passes/me`, signed QR token generator)
+* [ ] **Phase 3: Android Network Client & Data Layer** (Retrofit 2, OkHttp 3, Moshi, DataStore)
 * [ ] **Phase 4: Frontend Screen Integration & Mock Replacement**
-  * Connect LoginActivity, ScanQRActivity, SmartFormRegistrationActivity, ReviewRegistrationActivity, HomeDashboardActivity, DigitalPassActivity.
 * [ ] **Phase 5: End-to-End Testing & Physical Device Verification**
 
 ---
 
 ## 18. Current Stopping Point
 
-> **Phase 1 Complete:** Backend foundation, TypeScript Fastify server, PostgreSQL Docker setup, Prisma models, migrations, seed data, and health check verified. Ready for Phase 2 API implementation upon user approval.  
+> **Phase 2A Complete:** Secure Authentication System (Argon2id, JWT, Refresh Token Rotation, Auth Guard) implemented, tested, and verified. Fastify server, PostgreSQL database, and Android build healthy. Ready for Phase 2B upon user approval.  
 > *Updated on: August 29, 2026*
+
 

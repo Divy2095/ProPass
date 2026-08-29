@@ -1,6 +1,7 @@
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import Fastify, { FastifyInstance } from 'fastify';
+import { authRoutes } from './routes/auth.routes.js';
 import { healthRoutes } from './routes/health.routes.js';
 
 export async function buildApp(): Promise<FastifyInstance> {
@@ -30,8 +31,12 @@ export async function buildApp(): Promise<FastifyInstance> {
     };
   });
 
-  // Register Routes
+  // Register Health Routes
   await app.register(healthRoutes);
+
+  // Register Authentication Routes
+  await app.register(authRoutes, { prefix: '/api/v1/auth' });
+  await app.register(authRoutes, { prefix: '/api/auth' });
 
   return app;
 }
