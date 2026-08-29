@@ -5,6 +5,7 @@ import { authRoutes } from './routes/auth.routes.js';
 import { dashboardRoutes } from './routes/dashboard.routes.js';
 import { eventRoutes } from './routes/event.routes.js';
 import { healthRoutes } from './routes/health.routes.js';
+import { registrationRoutes } from './routes/registration.routes.js';
 import { userRoutes } from './routes/user.routes.js';
 
 export async function buildApp(): Promise<FastifyInstance> {
@@ -52,6 +53,10 @@ export async function buildApp(): Promise<FastifyInstance> {
   // Register Event & QR Validation Routes
   await app.register(eventRoutes, { prefix: '/api/v1/events' });
   await app.register(eventRoutes, { prefix: '/api/events' });
+
+  // Register Registration Routes
+  await app.register(registrationRoutes, { prefix: '/api/v1/registrations' });
+  await app.register(registrationRoutes, { prefix: '/api/registrations' });
 
   return app;
 }
