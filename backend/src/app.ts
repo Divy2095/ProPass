@@ -3,6 +3,7 @@ import helmet from '@fastify/helmet';
 import Fastify, { FastifyInstance } from 'fastify';
 import { authRoutes } from './routes/auth.routes.js';
 import { dashboardRoutes } from './routes/dashboard.routes.js';
+import { eventRoutes } from './routes/event.routes.js';
 import { healthRoutes } from './routes/health.routes.js';
 import { userRoutes } from './routes/user.routes.js';
 
@@ -47,6 +48,10 @@ export async function buildApp(): Promise<FastifyInstance> {
   // Register Dashboard Routes
   await app.register(dashboardRoutes, { prefix: '/api/v1/dashboard' });
   await app.register(dashboardRoutes, { prefix: '/api/dashboard' });
+
+  // Register Event & QR Validation Routes
+  await app.register(eventRoutes, { prefix: '/api/v1/events' });
+  await app.register(eventRoutes, { prefix: '/api/events' });
 
   return app;
 }
