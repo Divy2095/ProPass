@@ -79,12 +79,12 @@ interface ProPassApiService {
     @GET("api/v1/events/{eventId}")
     suspend fun getEvent(
         @Path("eventId") eventId: String
-    ): Response<ApiResponse<Map<String, Any?>>>
+    ): Response<ApiResponse<com.mpc.propass.network.model.EventResponseData>>
 
     @POST("api/v1/events/validate-qr")
     suspend fun validateQr(
-        @Body request: Map<String, @JvmSuppressWildcards String>
-    ): Response<ApiResponse<Map<String, Any?>>>
+        @Body request: com.mpc.propass.network.model.ValidateQrRequest
+    ): Response<ApiResponse<com.mpc.propass.network.model.ValidateQrResponseData>>
 
     // ==========================================
     // Event Registrations (Phase 2D)

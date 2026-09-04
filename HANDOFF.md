@@ -504,7 +504,16 @@ All listed features have been executed and verified on physical hardware & devel
     * Recent activity list dynamically rendered from backend registrations, with empty-state handling.
     * Profile editing flow connected via `dialog_edit_profile.xml` (`btnAddDetails`), submitting updates to `PUT /api/v1/users/profile` and refreshing dashboard metrics.
     * Profile & session management dialog on Profile tab and avatar icons with full profile inspection and secure logout.
-  * 49/49 unit tests passing across 13 test suites (`./gradlew testDebugUnitTest`).
+* [x] **Android Event & QR Scanning Integration (Phase 3D):**
+  * Typed Moshi models created: `EventDto` (Serializable), `ValidateQrRequest`, `ValidateQrResponseData`, `EventResponseData`.
+  * `ProPassQrParser` local utility validates ProPass QR format (`https://propass.id/event/<eventId>`) with optional trailing slash, case-insensitivity, and `www.` subdomain support.
+  * `EventRepository` (`EventRepositoryImpl`) implements `validateQr` (`POST /api/v1/events/validate-qr`) and `getEvent` (`GET /api/v1/events/:eventId`) with custom typed exceptions (`InvalidQrException`, `EventNotFoundException`, `EventInactiveException`).
+  * Two-tier validation pipeline in `ScanQRActivity`:
+    * Tier 1: Inexpensive local regex parsing via `ProPassQrParser` drops non-ProPass QR codes instantly without server calls.
+    * Tier 2: Authoritative backend validation with `@Volatile isValidationInProgress` duplicate frame suppression and throttling of repeated failures.
+    * User feedback: Real-time hint state ("Validating event with ProPass..."), haptic buzz on success/rejection, verification toast with event title, and tailored error toasts (400 Invalid format, 404 Event not found, 410 Event inactive, network failure).
+  * `SmartFormRegistrationActivity` binds real backend event details (`title`, `overline`, `subtitle`, `location`, `maxDuration`, `qrPayload`), dynamically enforcing backend `maxDuration` limits on the duration input.
+  * 63/63 unit tests passing across 15 test suites (`./gradlew testDebugUnitTest`).
   * Full Android debug build clean: `./gradlew assembleDebug` (`BUILD SUCCESSFUL`).
 
 ---
@@ -520,7 +529,7 @@ All listed features have been executed and verified on physical hardware & devel
 * [x] **Phase 3A: Android Networking Foundation** (Completed)
 * [x] **Phase 3B: Token Storage & Authentication Integration** (Completed)
 * [x] **Phase 3C: User & Dashboard Integration** (Completed)
-* [ ] **Phase 3D: Event & QR Scanning Integration**
+* [x] **Phase 3D: Event & QR Scanning Integration** (Completed)
 * [ ] **Phase 3E: Registration & Digital Pass Integration**
 * [ ] **Phase 4: Frontend Screen Integration & Mock Replacement**
 * [ ] **Phase 5: End-to-End Testing & Physical Device Verification**
@@ -529,7 +538,7 @@ All listed features have been executed and verified on physical hardware & devel
 
 ## 18. Current Stopping Point
 
-> **Phase 3C Complete:** User Profile & Home Dashboard integration established with typed Moshi DTOs, `UserRepository`, `DashboardRepository`, live dashboard binding in `HomeDashboardActivity` (greetings, digital pass preview, animated profile completion ring, real PostgreSQL recent activities), interactive profile editing dialog via `PUT /api/v1/users/profile`, and profile/session logout management. Android build clean (0 errors, 49/49 unit tests passing across 13 suites). Ready for Phase 3D upon user approval.  
+> **Phase 3D Complete:** Event & QR Scanning integration established with typed Moshi DTOs, `ProPassQrParser` local format validator, `EventRepository`, two-tier validation in `ScanQRActivity` (local regex filter + authoritative backend validation with duplicate suppression), real backend event data binding in `SmartFormRegistrationActivity`, and comprehensive MockWebServer tests. Android build clean (0 errors, 63/63 unit tests passing across 15 suites). Ready for Phase 3E upon user approval.  
 > *Updated on: September 4, 2026*
 
 

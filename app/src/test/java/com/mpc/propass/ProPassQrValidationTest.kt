@@ -1,46 +1,46 @@
 package com.mpc.propass
 
+import com.mpc.propass.util.ProPassQrParser
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ProPassQrValidationTest {
 
-    private fun parseProPassEventId(qrContent: String): String? {
-        if (qrContent.isBlank()) return null
-        return try {
-            val pattern = Regex("^(?:https?)://(?:www\\.)?propass\\.id/event/([a-zA-Z0-9_-]+)/?$", RegexOption.IGNORE_CASE)
-            val match = pattern.find(qrContent.trim())
-            match?.groupValues?.get(1)?.lowercase()?.takeIf { it.isNotBlank() }
-        } catch (e: Exception) {
-            null
-        }
-    }
-
     @Test
     fun testValidProPassEventUrls() {
-        assertEquals("techconf-2024", parseProPassEventId("https://propass.id/event/techconf-2024"))
-        assertEquals("google-office-visit", parseProPassEventId("https://propass.id/event/google-office-visit"))
-        assertEquals("android-conf-2026", parseProPassEventId("https://propass.id/event/android-conf-2026"))
-        assertEquals("techconf-2024", parseProPassEventId("https://propass.id/event/techconf-2024/"))
-        assertEquals("techconf-2024", parseProPassEventId("http://propass.id/event/techconf-2024"))
-        assertEquals("techconf-2024", parseProPassEventId("https://www.propass.id/event/techconf-2024"))
-        assertEquals("techconf-2024", parseProPassEventId("HTTPS://PROPASS.ID/EVENT/TECHCONF-2024"))
+        assertEquals("techconf-2024", ProPassQrParser.parseEventId("https://propass.id/event/techconf-2024"))
+        assertEquals("google-office-visit", ProPassQrParser.parseEventId("https://propass.id/event/google-office-visit"))
+        assertEquals("android-conf-2026", ProPassQrParser.parseEventId("https://propass.id/event/android-conf-2026"))
+        assertEquals("techconf-2024", ProPassQrParser.parseEventId("https://propass.id/event/techconf-2024/"))
+        assertEquals("techconf-2024", ProPassQrParser.parseEventId("http://propass.id/event/techconf-2024"))
+        assertEquals("techconf-2024", ProPassQrParser.parseEventId("https://www.propass.id/event/techconf-2024"))
+        assertEquals("techconf-2024", ProPassQrParser.parseEventId("HTTPS://PROPASS.ID/EVENT/TECHCONF-2024"))
+
+        assertTrue(ProPassQrParser.isProPassQr("https://propass.id/event/techconf-2024"))
+        assertTrue(ProPassQrParser.isProPassQr("https://www.propass.id/event/my-cool-event_123/"))
     }
 
     @Test
     fun testInvalidUrlsAndContent() {
-        assertNull(parseProPassEventId("https://google.com"))
-        assertNull(parseProPassEventId("https://youtube.com"))
-        assertNull(parseProPassEventId("https://chatgpt.com/c/6a8fce3b-6040-83ee-8124-3b85f93cd95f"))
-        assertNull(parseProPassEventId("https://example.com/event/techconf-2024"))
-        assertNull(parseProPassEventId("https://propass.id/other/techconf-2024"))
-        assertNull(parseProPassEventId("https://propass.id/event/"))
-        assertNull(parseProPassEventId("https://propass.id/event"))
-        assertNull(parseProPassEventId("random string"))
-        assertNull(parseProPassEventId("WIFI:T:WPA;S:MyNetwork;P:MyPassword;;"))
-        assertNull(parseProPassEventId("tel:+1234567890"))
-        assertNull(parseProPassEventId("mailto:test@propass.id"))
-        assertNull(parseProPassEventId(""))
+        assertNull(ProPassQrParser.parseEventId("https://google.com"))
+        assertNull(ProPassQrParser.parseEventId("https://youtube.com"))
+        assertNull(ProPassQrParser.parseEventId("https://chatgpt.com/c/6a8fce3b-6040-83ee-8124-3b85f93cd95f"))
+        assertNull(ProPassQrParser.parseEventId("https://example.com/event/techconf-2024"))
+        assertNull(ProPassQrParser.parseEventId("https://propass.id/other/techconf-2024"))
+        assertNull(ProPassQrParser.parseEventId("https://propass.id/event/"))
+        assertNull(ProPassQrParser.parseEventId("https://propass.id/event"))
+        assertNull(ProPassQrParser.parseEventId("random string"))
+        assertNull(ProPassQrParser.parseEventId("WIFI:T:WPA;S:MyNetwork;P:MyPassword;;"))
+        assertNull(ProPassQrParser.parseEventId("tel:+1234567890"))
+        assertNull(ProPassQrParser.parseEventId("mailto:test@propass.id"))
+        assertNull(ProPassQrParser.parseEventId(""))
+        assertNull(ProPassQrParser.parseEventId(null))
+
+        assertFalse(ProPassQrParser.isProPassQr("https://google.com"))
+        assertFalse(ProPassQrParser.isProPassQr(null))
+        assertFalse(ProPassQrParser.isProPassQr(""))
     }
 }

@@ -158,4 +158,12 @@
     <string name="profile_updated_toast">Profile updated successfully</string>
     <string name="dashboard_error_loading">Failed to load dashboard</string>
     <string name="action_retry">Retry</string>
+
+    <!-- Phase 3D Event & QR Strings -->
+    <string name="scan_hint_validating">Validating event with ProPass...</string>
+    <string name="error_invalid_qr_format">Invalid ProPass QR code</string>
+    <string name="error_event_not_found">Event not found</string>
+    <string name="error_event_inactive">This event is no longer active or has concluded</string>
+    <string name="error_event_validation_failed">Event validation failed</string>
+    <string name="toast_event_verified">Verified: %1$s</string>
 </resources>

@@ -23,6 +23,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.mpc.propass.network.model.EventDto
 
 /**
  * Smart Form Registration screen implementation for ProPass Digital Identity System.
@@ -32,6 +33,13 @@ class SmartFormRegistrationActivity : AppCompatActivity() {
 
     companion object {
         const val EXTRA_EVENT_ID = "EXTRA_EVENT_ID"
+        const val EXTRA_EVENT_TITLE = "EXTRA_EVENT_TITLE"
+        const val EXTRA_EVENT_OVERLINE = "EXTRA_EVENT_OVERLINE"
+        const val EXTRA_EVENT_SUBTITLE = "EXTRA_EVENT_SUBTITLE"
+        const val EXTRA_EVENT_LOCATION = "EXTRA_EVENT_LOCATION"
+        const val EXTRA_EVENT_MAX_DURATION = "EXTRA_EVENT_MAX_DURATION"
+        const val EXTRA_EVENT_DTO = "EXTRA_EVENT_DTO"
+        const val EXTRA_SCANNED_QR = "EXTRA_SCANNED_QR"
     }
 
     private lateinit var smartFormRoot: FrameLayout
@@ -71,6 +79,7 @@ class SmartFormRegistrationActivity : AppCompatActivity() {
 
     private var currentEventId: String = "techconf-2024"
     private var currentEventName: String = "TechConf 2024"
+    private var maxDuration: Int = 5
 
     private val purposeOptions by lazy {
         arrayOf(
@@ -140,8 +149,24 @@ class SmartFormRegistrationActivity : AppCompatActivity() {
     }
 
     private fun setupEventHeader() {
-        val eventId = intent.getStringExtra(EXTRA_EVENT_ID) ?: "techconf-2024"
+        @Suppress("DEPRECATION")
+        val eventDto = intent.getSerializableExtra(EXTRA_EVENT_DTO) as? EventDto
+        val eventId = intent.getStringExtra(EXTRA_EVENT_ID) ?: eventDto?.slug ?: eventDto?.id ?: "techconf-2024"
+        val eventTitle = intent.getStringExtra(EXTRA_EVENT_TITLE) ?: eventDto?.title
+        val eventOverline = intent.getStringExtra(EXTRA_EVENT_OVERLINE) ?: eventDto?.overline
+        val eventSubtitle = intent.getStringExtra(EXTRA_EVENT_SUBTITLE) ?: eventDto?.subtitle
+        val eventMaxDur = intent.getIntExtra(EXTRA_EVENT_MAX_DURATION, eventDto?.maxDuration ?: 5)
+        maxDuration = if (eventMaxDur > 0) eventMaxDur else 5
+
         currentEventId = eventId
+
+        if (!eventTitle.isNullOrBlank()) {
+            currentEventName = eventTitle
+            tvEventTitle.text = eventTitle
+            tvOverline.text = eventOverline ?: getString(R.string.event_registration_overline)
+            tvEventSubtitle.text = eventSubtitle ?: getString(R.string.event_subtitle)
+            return
+        }
 
         when (eventId.lowercase()) {
             "techconf-2024" -> {
@@ -434,11 +459,17 @@ class SmartFormRegistrationActivity : AppCompatActivity() {
             clearPurposeError()
         }
 
-        // 5. Expected Duration validation (1 to 5 days)
+        // 5. Expected Duration validation (1 to maxDuration days)
         val durationStr = etDuration.text.toString().trim()
         val duration = durationStr.toIntOrNull()
-        if (duration == null || duration < 1 || duration > 5) {
-            tvErrorDuration.text = getString(R.string.error_duration_invalid)
+        if (duration == null || duration < 1 || duration > maxDuration) {
+            tvErrorDuration.text = if (maxDuration == 5) {
+                getString(R.string.error_duration_invalid)
+            } else if (maxDuration == 1) {
+                "Enter a duration of 1 day"
+            } else {
+                "Enter a duration between 1 and $maxDuration days"
+            }
             tvErrorDuration.visibility = View.VISIBLE
             etDuration.setBackgroundResource(R.drawable.bg_field_error)
             isValid = false

@@ -32,6 +32,9 @@ class ProPassApplication : Application() {
     lateinit var dashboardRepository: DashboardRepository
         private set
 
+    lateinit var eventRepository: com.mpc.propass.data.repository.EventRepository
+        private set
+
     override fun onCreate() {
         super.onCreate()
         instance = this
@@ -52,6 +55,9 @@ class ProPassApplication : Application() {
             apiService = NetworkClient.apiService
         )
         dashboardRepository = DashboardRepositoryImpl(
+            apiService = NetworkClient.apiService
+        )
+        eventRepository = com.mpc.propass.data.repository.EventRepositoryImpl(
             apiService = NetworkClient.apiService
         )
     }

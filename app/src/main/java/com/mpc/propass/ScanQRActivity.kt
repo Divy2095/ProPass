@@ -35,11 +35,18 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.lifecycleScope
 import com.google.mlkit.vision.barcode.BarcodeScanner
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
+import com.mpc.propass.data.repository.EventInactiveException
+import com.mpc.propass.data.repository.EventNotFoundException
+import com.mpc.propass.data.repository.EventRepository
+import com.mpc.propass.data.repository.InvalidQrException
+import com.mpc.propass.util.ProPassQrParser
+import kotlinx.coroutines.launch
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -66,6 +73,10 @@ class ScanQRActivity : AppCompatActivity() {
     private lateinit var btnShutter: FrameLayout
     private lateinit var btnGallery: FrameLayout
 
+    private val eventRepository: EventRepository by lazy {
+        (application as ProPassApplication).eventRepository
+    }
+
     private var cameraProvider: ProcessCameraProvider? = null
     private var camera: Camera? = null
     private var cameraExecutor: ExecutorService? = null
@@ -77,7 +88,12 @@ class ScanQRActivity : AppCompatActivity() {
     @Volatile
     private var isQrDetected: Boolean = false
 
+    @Volatile
+    private var isValidationInProgress: Boolean = false
+
     private var lastInvalidToastTimestamp: Long = 0L
+    private var lastFailedQr: String? = null
+    private var lastFailedTimestamp: Long = 0L
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -112,6 +128,9 @@ class ScanQRActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         isQrDetected = false
+        isValidationInProgress = false
+        lastFailedQr = null
+        tvScanHint.text = getString(R.string.scan_hint_align_qr)
         checkCameraPermissionAndStart()
     }
 
@@ -245,17 +264,17 @@ class ScanQRActivity : AppCompatActivity() {
     @androidx.annotation.OptIn(androidx.camera.core.ExperimentalGetImage::class)
     private fun processImageProxy(imageProxy: ImageProxy) {
         val mediaImage = imageProxy.image
-        if (mediaImage != null && !isQrDetected) {
+        if (mediaImage != null && !isQrDetected && !isValidationInProgress) {
             val image = InputImage.fromMediaImage(
                 mediaImage,
                 imageProxy.imageInfo.rotationDegrees
             )
             barcodeScanner?.process(image)
                 ?.addOnSuccessListener { barcodes ->
-                    if (!isQrDetected && barcodes.isNotEmpty()) {
+                    if (!isQrDetected && !isValidationInProgress && barcodes.isNotEmpty()) {
                         val qrBarcode = barcodes.firstOrNull { it.format == Barcode.FORMAT_QR_CODE }
                         val rawValue = qrBarcode?.rawValue
-                        if (!rawValue.isNullOrBlank() && !isQrDetected) {
+                        if (!rawValue.isNullOrBlank() && !isQrDetected && !isValidationInProgress) {
                             handleScannedQrCode(rawValue)
                         }
                     }
@@ -271,37 +290,56 @@ class ScanQRActivity : AppCompatActivity() {
         }
     }
 
-    /**
-     * Validates decoded QR content against the ProPass event format:
-     * https://propass.id/event/<eventId>
-     */
-    private fun parseProPassEventId(qrContent: String): String? {
-        if (qrContent.isBlank()) return null
-        return try {
-            val pattern = Regex("^(?:https?)://(?:www\\.)?propass\\.id/event/([a-zA-Z0-9_-]+)/?$", RegexOption.IGNORE_CASE)
-            val match = pattern.find(qrContent.trim())
-            match?.groupValues?.get(1)?.lowercase()?.takeIf { it.isNotBlank() }
-        } catch (e: Exception) {
-            null
-        }
-    }
-
     private fun handleScannedQrCode(qrValue: String) {
-        Log.d("ScanQRActivity", "QR detected: $qrValue")
+        if (isQrDetected || isValidationInProgress) return
 
-        val eventId = parseProPassEventId(qrValue)
-        if (eventId != null) {
-            // Valid ProPass Event QR
-            if (isQrDetected) return
-            isQrDetected = true
+        // Tier 1: Inexpensive local regex check
+        val localSlug = ProPassQrParser.parseEventId(qrValue)
+        if (localSlug == null) {
+            Log.w("ScanQRActivity", "QR rejected locally: Not a ProPass event QR ($qrValue)")
 
-            Log.d("ScanQRActivity", "ProPass event ID: $eventId")
+            val now = SystemClock.elapsedRealtime()
+            if (now - lastInvalidToastTimestamp > 2000) {
+                lastInvalidToastTimestamp = now
+                runOnUiThread {
+                    Toast.makeText(
+                        this,
+                        getString(R.string.error_invalid_qr_format),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+            return
+        }
 
-            runOnUiThread {
+        // Throttle rapid re-validation attempts of recently failed QR
+        val now = SystemClock.elapsedRealtime()
+        if (qrValue == lastFailedQr && now - lastFailedTimestamp < 3000) {
+            return
+        }
+
+        // Tier 2: Authoritative backend event validation
+        Log.d("ScanQRActivity", "Local check passed ($localSlug). Validating with backend: $qrValue")
+        isValidationInProgress = true
+
+        runOnUiThread {
+            tvScanHint.text = getString(R.string.scan_hint_validating)
+        }
+
+        lifecycleScope.launch {
+            val result = eventRepository.validateQr(qrValue)
+            result.onSuccess { data ->
+                isQrDetected = true
+                isValidationInProgress = false
+                lastFailedQr = null
+
+                val event = data.event
+                Log.d("ScanQRActivity", "Event verified by backend: ${event.title} (${event.slug})")
+
                 scanQrRoot.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
                 Toast.makeText(
-                    this,
-                    "ProPass Event Detected: $eventId",
+                    this@ScanQRActivity,
+                    getString(R.string.toast_event_verified, event.title),
                     Toast.LENGTH_SHORT
                 ).show()
 
@@ -314,27 +352,39 @@ class ScanQRActivity : AppCompatActivity() {
                 cameraProvider?.unbindAll()
 
                 Handler(Looper.getMainLooper()).postDelayed({
-                    val intent = Intent(this, SmartFormRegistrationActivity::class.java).apply {
-                        putExtra(SmartFormRegistrationActivity.EXTRA_EVENT_ID, eventId)
-                        putExtra("EXTRA_SCANNED_QR", qrValue)
+                    val intent = Intent(this@ScanQRActivity, SmartFormRegistrationActivity::class.java).apply {
+                        putExtra(SmartFormRegistrationActivity.EXTRA_EVENT_ID, event.slug.ifBlank { event.id })
+                        putExtra(SmartFormRegistrationActivity.EXTRA_EVENT_TITLE, event.title)
+                        putExtra(SmartFormRegistrationActivity.EXTRA_EVENT_OVERLINE, event.overline)
+                        putExtra(SmartFormRegistrationActivity.EXTRA_EVENT_SUBTITLE, event.subtitle)
+                        putExtra(SmartFormRegistrationActivity.EXTRA_EVENT_LOCATION, event.location)
+                        putExtra(SmartFormRegistrationActivity.EXTRA_EVENT_MAX_DURATION, event.maxDuration)
+                        putExtra(SmartFormRegistrationActivity.EXTRA_EVENT_DTO, event)
+                        putExtra(SmartFormRegistrationActivity.EXTRA_SCANNED_QR, data.qrPayload.ifBlank { qrValue })
                     }
                     startActivity(intent)
                 }, 350)
-            }
-        } else {
-            // Invalid / Non-ProPass QR Code
-            Log.w("ScanQRActivity", "QR rejected: Not a ProPass event QR ($qrValue)")
+            }.onFailure { error ->
+                isValidationInProgress = false
+                lastFailedQr = qrValue
+                lastFailedTimestamp = SystemClock.elapsedRealtime()
 
-            val now = SystemClock.elapsedRealtime()
-            if (now - lastInvalidToastTimestamp > 1500) {
-                lastInvalidToastTimestamp = now
-                runOnUiThread {
-                    Toast.makeText(
-                        this,
-                        "Not a ProPass event QR",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                tvScanHint.text = getString(R.string.scan_hint_align_qr)
+                scanQrRoot.performHapticFeedback(HapticFeedbackConstants.REJECT)
+
+                val errorMessage = when (error) {
+                    is InvalidQrException -> getString(R.string.error_invalid_qr_format)
+                    is EventNotFoundException -> getString(R.string.error_event_not_found)
+                    is EventInactiveException -> getString(R.string.error_event_inactive)
+                    else -> error.message ?: getString(R.string.error_event_validation_failed)
                 }
+
+                Log.w("ScanQRActivity", "Event validation failed: $errorMessage", error)
+                Toast.makeText(
+                    this@ScanQRActivity,
+                    errorMessage,
+                    Toast.LENGTH_LONG
+                ).show()
             }
         }
     }
@@ -403,8 +453,11 @@ class ScanQRActivity : AppCompatActivity() {
         btnShutter.setOnTouchListener(touchListener90)
         btnShutter.setOnClickListener { view ->
             view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-            if (isQrDetected) {
+            if (isQrDetected || isValidationInProgress) {
                 isQrDetected = false
+                isValidationInProgress = false
+                lastFailedQr = null
+                tvScanHint.text = getString(R.string.scan_hint_align_qr)
                 bindCameraUseCases()
             } else {
                 Toast.makeText(
