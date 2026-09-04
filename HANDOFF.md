@@ -290,6 +290,13 @@ From [`gradle/libs.versions.toml`](file:///home/divy/AndroidProjects/ProPass/gra
 * `RegistrationSuccessActivity.kt` — Animated confirmation screen after submission.
 * `CircularProgressView.kt` — Custom Canvas view for smooth circular profile progress.
 * `RegistrationData.kt` — Serializable data model for event registration details.
+* `network/config/NetworkConfig.kt` — Centralized base URL configuration, timeouts, and emulator/hardware device routing.
+* `network/model/ApiResponse.kt` — Generic Fastify API response envelope (`success`, `data`, `message`, `error`, `statusCode`, `timestamp`).
+* `network/model/ApiError.kt` — Structured API error and validation error details model.
+* `network/interceptor/TokenProvider.kt` — Abstraction for providing authentication tokens (`TokenProvider`, `InMemoryTokenProvider`, `NoOpTokenProvider`).
+* `network/interceptor/AuthInterceptor.kt` — OkHttp interceptor injecting `Authorization: Bearer <token>` and `Accept: application/json`.
+* `network/api/ProPassApiService.kt` — Retrofit 2 service interface mapping all Phase 1 and Phase 2 backend REST endpoints.
+* `network/NetworkClient.kt` — Factory and singleton building Moshi, OkHttpClient with auth/logging interceptors, and Retrofit 2.
 
 ### Backend Sources (`backend/`):
 * `src/server.ts` — Fastify server startup entrypoint.
@@ -355,6 +362,10 @@ From [`gradle/libs.versions.toml`](file:///home/divy/AndroidProjects/ProPass/gra
 ### Unit Tests:
 * `app/src/test/java/com/mpc/propass/ProPassQrValidationTest.kt` — Android unit tests for ProPass QR regex validation and URL parsing.
 * `app/src/test/java/com/mpc/propass/ExampleUnitTest.kt` — Basic Android host unit test.
+* `app/src/test/java/com/mpc/propass/network/NetworkConfigTest.kt` — Tests for base URL normalization, default emulator host, and timeout configurations.
+* `app/src/test/java/com/mpc/propass/network/AuthInterceptorTest.kt` — Tests for Bearer token injection, Accept headers, and explicit header preservation.
+* `app/src/test/java/com/mpc/propass/network/ApiResponseParsingTest.kt` — Tests for Moshi serialization and deserialization of standard Fastify envelopes and error models.
+* `app/src/test/java/com/mpc/propass/network/NetworkClientIntegrationTest.kt` — MockWebServer end-to-end integration tests for Retrofit + OkHttp + Moshi.
 * `backend/tests/health.test.ts` — Backend Fastify health check test suite (2 tests passed).
 * `backend/tests/auth.test.ts` — Backend authentication test suite (14 tests passed).
 * `backend/tests/user.test.ts` — Backend user profile & dashboard test suite (8 tests passed).
@@ -412,8 +423,8 @@ npm run dev
 
 ## 15. Known Limitations (Current Phase)
 
-1. **Backend Complete (Phase 2):** All Core Backend Services (Auth, User/Profile, Dashboard, Events, QR Validation, Registrations, Digital Pass, Health) are implemented, tested, and validated against PostgreSQL.
-2. **Android Network Integration:** Android client currently runs on local mock data until Phase 3/4 integration with Retrofit 2.
+1. **Android Networking Foundation (Phase 3A):** Retrofit 2, OkHttp 4, Moshi, centralized base URL config, and auth interceptors are initialized. Token persistence via DataStore and refresh token management belong to Phase 3B.
+2. **Android Network Integration:** Android UI screens currently run on local/mock data until Phase 3/4 integration.
 3. **Mock Actions:** External wallet export, social sharing, and contact buttons on Android generate UI Toast feedback.
 
 ---
@@ -423,6 +434,7 @@ npm run dev
 All listed features have been executed and verified on physical hardware & development environment:
 
 * [x] **Android Gradle Build:** `./gradlew assembleDebug` builds with 0 errors.
+* [x] **Android Unit Tests:** 15/15 unit tests passing across 6 test suites (`./gradlew testDebugUnitTest`).
 * [x] **Android Physical Device Features:** Live CameraX viewfinder, physical torch, ML Kit QR detection, local QR validation, Smart Form validation, Review & Success flows verified on device `KVAMAAXSPNOV7PXC`.
 * [x] **Backend Foundation (Phase 1):**
   * Node.js v22 + TypeScript + Fastify + Prisma initialized.
@@ -445,7 +457,14 @@ All listed features have been executed and verified on physical hardware & devel
   * `GET /api/v1/registrations/my` (200 OK) returns authenticated user's registration history with attached event details.
 * [x] **Backend Digital Pass API (Phase 2E):**
   * `GET /api/v1/passes/me` (200 OK) retrieves authenticated user's active Digital Pass with calculated expiration status, pass tier, QR payload, and verified holder profile details.
-  * 72/72 Vitest automated tests passed across all 6 test suites (100% pass rate).
+  * 72/72 Vitest automated tests passed across all 6 backend test suites (100% pass rate).
+* [x] **Android Networking Foundation (Phase 3A):**
+  * Retrofit 2.11.0, OkHttp 4.12.0, Moshi 1.15.2, and OkHttp Logging Interceptor integrated.
+  * `NetworkConfig` established for centralized base URL management (`10.0.2.2:3000` for emulator, `127.0.0.1:3000` via `adb reverse`, configurable for local LAN).
+  * `ApiResponse<T>` and `ApiError` envelopes matching Fastify contract.
+  * `TokenProvider` abstraction and `AuthInterceptor` for Bearer token injection.
+  * `ProPassApiService` mapping Fastify endpoints.
+  * MockWebServer integration tests verifying JSON deserialization and header injection.
 
 ---
 
@@ -457,7 +476,11 @@ All listed features have been executed and verified on physical hardware & devel
 * [x] **Phase 2C: Event & QR Validation API** (Completed)
 * [x] **Phase 2D: Registration API** (Completed)
 * [x] **Phase 2E: Digital Pass API** (Completed)
-* [ ] **Phase 3: Android Network Client & Data Layer** (Retrofit 2, OkHttp 3, Moshi, DataStore)
+* [x] **Phase 3A: Android Networking Foundation** (Completed)
+* [ ] **Phase 3B: Token Storage & Authentication Integration** (DataStore, AuthRepository, SessionManager)
+* [ ] **Phase 3C: User & Dashboard Integration**
+* [ ] **Phase 3D: Event & QR Scanning Integration**
+* [ ] **Phase 3E: Registration & Digital Pass Integration**
 * [ ] **Phase 4: Frontend Screen Integration & Mock Replacement**
 * [ ] **Phase 5: End-to-End Testing & Physical Device Verification**
 
@@ -465,8 +488,8 @@ All listed features have been executed and verified on physical hardware & devel
 
 ## 18. Current Stopping Point
 
-> **Phase 2E Complete:** Digital Pass API implemented, tested, and verified against PostgreSQL database. Phase 2 Core Backend Services are 100% complete with 72/72 passing tests. Android build clean. Ready for Phase 3 upon user approval.  
-> *Updated on: August 29, 2026*
+> **Phase 3A Complete:** Android Networking Foundation established with Retrofit 2, OkHttp 4, Moshi, centralized base URL config, auth interceptor, and comprehensive MockWebServer unit tests. Android build clean (0 errors, 15/15 unit tests passing). Ready for Phase 3B upon user approval.  
+> *Updated on: September 4, 2026*
 
 
 

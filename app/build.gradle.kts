@@ -45,7 +45,16 @@ dependencies {
     // Google ML Kit Barcode Scanning
     implementation(libs.mlkit.barcode)
 
+    // Networking Stack (Retrofit, OkHttp, Moshi)
+    implementation(libs.retrofit.core)
+    implementation(libs.retrofit.converter.moshi)
+    implementation(libs.okhttp.core)
+    implementation(libs.okhttp.logging)
+    implementation(libs.moshi.core)
+    implementation(libs.moshi.kotlin)
+
     testImplementation(libs.junit)
+    testImplementation(libs.okhttp.mockwebserver)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
 }
