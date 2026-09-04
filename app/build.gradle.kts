@@ -48,6 +48,7 @@ dependencies {
 
     // Google ML Kit Barcode Scanning
     implementation(libs.mlkit.barcode)
+    implementation(libs.zxing.core)
 
     // Networking Stack (Retrofit, OkHttp, Moshi)
     implementation(libs.retrofit.core)

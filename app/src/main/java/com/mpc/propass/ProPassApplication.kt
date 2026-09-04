@@ -35,6 +35,12 @@ class ProPassApplication : Application() {
     lateinit var eventRepository: com.mpc.propass.data.repository.EventRepository
         private set
 
+    lateinit var registrationRepository: com.mpc.propass.data.repository.RegistrationRepository
+        private set
+
+    lateinit var digitalPassRepository: com.mpc.propass.data.repository.DigitalPassRepository
+        private set
+
     override fun onCreate() {
         super.onCreate()
         instance = this
@@ -58,6 +64,12 @@ class ProPassApplication : Application() {
             apiService = NetworkClient.apiService
         )
         eventRepository = com.mpc.propass.data.repository.EventRepositoryImpl(
+            apiService = NetworkClient.apiService
+        )
+        registrationRepository = com.mpc.propass.data.repository.RegistrationRepositoryImpl(
+            apiService = NetworkClient.apiService
+        )
+        digitalPassRepository = com.mpc.propass.data.repository.DigitalPassRepositoryImpl(
             apiService = NetworkClient.apiService
         )
     }

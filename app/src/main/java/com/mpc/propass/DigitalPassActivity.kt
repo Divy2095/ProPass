@@ -1,22 +1,38 @@
 package com.mpc.propass
 
-import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.util.TypedValue
 import android.view.MotionEvent
 import android.view.View
 import android.view.animation.DecelerateInterpolator
 import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.ProgressBar
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.core.widget.NestedScrollView
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.EncodeHintType
+import com.google.zxing.qrcode.QRCodeWriter
+import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
+import com.mpc.propass.data.repository.DigitalPassRepository
+import com.mpc.propass.data.repository.NoActivePassException
+import com.mpc.propass.data.repository.PassAuthException
+import com.mpc.propass.network.model.MyPassResponseData
+import kotlinx.coroutines.launch
 
 /**
  * Digital Pass screen implementation for ProPass Digital Identity System.
@@ -30,6 +46,12 @@ import com.google.android.material.card.MaterialCardView
  */
 class DigitalPassActivity : AppCompatActivity() {
 
+    private val digitalPassRepository: DigitalPassRepository by lazy {
+        (application as ProPassApplication).digitalPassRepository
+    }
+
+    private var currentPassData: MyPassResponseData? = null
+
     private lateinit var digitalPassRoot: FrameLayout
     private lateinit var topAppBar: LinearLayout
     private lateinit var topBarSpacer: View
@@ -37,6 +59,20 @@ class DigitalPassActivity : AppCompatActivity() {
     private lateinit var bottomBarSpacer: View
 
     private lateinit var cardPass: MaterialCardView
+    private lateinit var tvUserName: TextView
+    private lateinit var tvUserRole: TextView
+    private lateinit var tvUserOrg: TextView
+    private lateinit var badgeVerified: FrameLayout
+    private lateinit var ivQrCode: ImageView
+    private lateinit var tvPassNumber: TextView
+    private lateinit var tvPassTier: TextView
+
+    private lateinit var passScrollView: NestedScrollView
+    private lateinit var passProgressBar: ProgressBar
+    private lateinit var layoutPassError: LinearLayout
+    private lateinit var tvPassErrorMessage: TextView
+    private lateinit var btnPassRetry: MaterialButton
+
     private lateinit var btnContactMail: FrameLayout
     private lateinit var btnContactCall: FrameLayout
     private lateinit var btnContactSocial: FrameLayout
@@ -61,6 +97,7 @@ class DigitalPassActivity : AppCompatActivity() {
         applyWindowInsets()
         startCardEntranceAnimation()
         setupInteractions()
+        loadPassData()
     }
 
     private fun setupEdgeToEdge() {
@@ -78,6 +115,20 @@ class DigitalPassActivity : AppCompatActivity() {
         bottomBarSpacer = findViewById(R.id.bottomBarSpacer)
 
         cardPass = findViewById(R.id.cardPass)
+        tvUserName = findViewById(R.id.tvUserName)
+        tvUserRole = findViewById(R.id.tvUserRole)
+        tvUserOrg = findViewById(R.id.tvUserOrg)
+        badgeVerified = findViewById(R.id.badgeVerified)
+        ivQrCode = findViewById(R.id.ivQrCode)
+        tvPassNumber = findViewById(R.id.tvPassNumber)
+        tvPassTier = findViewById(R.id.tvPassTier)
+
+        passScrollView = findViewById(R.id.passScrollView)
+        passProgressBar = findViewById(R.id.passProgressBar)
+        layoutPassError = findViewById(R.id.layoutPassError)
+        tvPassErrorMessage = findViewById(R.id.tvPassErrorMessage)
+        btnPassRetry = findViewById(R.id.btnPassRetry)
+
         btnContactMail = findViewById(R.id.btnContactMail)
         btnContactCall = findViewById(R.id.btnContactCall)
         btnContactSocial = findViewById(R.id.btnContactSocial)
@@ -172,46 +223,74 @@ class DigitalPassActivity : AppCompatActivity() {
 
         cardPass.setOnTouchListener(touchListener98)
 
+        // Retry button
+        btnPassRetry.setOnClickListener {
+            loadPassData()
+        }
+
         // Contact Methods
         btnContactMail.setOnTouchListener(touchListener92)
         btnContactMail.setOnClickListener {
-            try {
-                val emailIntent = Intent(Intent.ACTION_SENDTO).apply {
-                    data = Uri.parse("mailto:elena.rodriguez@acmecorp.com")
-                    putExtra(Intent.EXTRA_SUBJECT, "ProPass Connection")
+            val email = currentPassData?.holder?.email
+            if (!email.isNullOrBlank()) {
+                try {
+                    val emailIntent = android.content.Intent(android.content.Intent.ACTION_SENDTO).apply {
+                        data = Uri.parse("mailto:$email")
+                        putExtra(android.content.Intent.EXTRA_SUBJECT, "ProPass Connection")
+                    }
+                    startActivity(emailIntent)
+                } catch (e: Exception) {
+                    Toast.makeText(this, "Email: $email", Toast.LENGTH_SHORT).show()
                 }
-                startActivity(emailIntent)
-            } catch (e: Exception) {
-                Toast.makeText(this, "Email: elena.rodriguez@acmecorp.com", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "Email not provided", Toast.LENGTH_SHORT).show()
             }
         }
 
         btnContactCall.setOnTouchListener(touchListener92)
         btnContactCall.setOnClickListener {
-            try {
-                val dialIntent = Intent(Intent.ACTION_DIAL).apply {
-                    data = Uri.parse("tel:+15552345678")
+            val phone = currentPassData?.holder?.phone
+            if (!phone.isNullOrBlank()) {
+                try {
+                    val dialIntent = android.content.Intent(android.content.Intent.ACTION_DIAL).apply {
+                        data = Uri.parse("tel:$phone")
+                    }
+                    startActivity(dialIntent)
+                } catch (e: Exception) {
+                    Toast.makeText(this, "Phone: $phone", Toast.LENGTH_SHORT).show()
                 }
-                startActivity(dialIntent)
-            } catch (e: Exception) {
-                Toast.makeText(this, "Phone: +1 (555) 234-5678", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "Phone number not provided", Toast.LENGTH_SHORT).show()
             }
         }
 
         btnContactSocial.setOnTouchListener(touchListener92)
         btnContactSocial.setOnClickListener {
-            Toast.makeText(this, "Opening LinkedIn Profile: Elena Rodriguez", Toast.LENGTH_SHORT).show()
+            val linkedinUrl = currentPassData?.holder?.linkedinUrl
+            if (!linkedinUrl.isNullOrBlank()) {
+                try {
+                    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse(linkedinUrl))
+                    startActivity(intent)
+                } catch (e: Exception) {
+                    Toast.makeText(this, "LinkedIn: $linkedinUrl", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                val name = currentPassData?.holder?.fullName ?: "Holder"
+                Toast.makeText(this, "LinkedIn profile for $name not provided", Toast.LENGTH_SHORT).show()
+            }
         }
 
         // Action Buttons
         btnShareLink.setOnTouchListener(touchListener98)
         btnShareLink.setOnClickListener {
-            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+            val name = currentPassData?.holder?.fullName ?: getString(R.string.pass_holder_name)
+            val passNum = currentPassData?.pass?.passNumber ?: ""
+            val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
                 type = "text/plain"
-                putExtra(Intent.EXTRA_SUBJECT, "ProPass Digital Identity - Elena Rodriguez")
-                putExtra(Intent.EXTRA_TEXT, "View Elena Rodriguez's verified ProPass: https://propass.id/p/elena-rodriguez")
+                putExtra(android.content.Intent.EXTRA_SUBJECT, "ProPass Digital Identity - $name")
+                putExtra(android.content.Intent.EXTRA_TEXT, "View $name's verified ProPass ($passNum): https://propass.id/p/$passNum")
             }
-            startActivity(Intent.createChooser(shareIntent, "Share Digital Pass"))
+            startActivity(android.content.Intent.createChooser(shareIntent, "Share Digital Pass"))
         }
 
         btnSaveImage.setOnTouchListener(touchListener98)
@@ -230,18 +309,18 @@ class DigitalPassActivity : AppCompatActivity() {
         }
 
         tabScan.setOnClickListener {
-            val intent = Intent(this, ScanQRActivity::class.java)
+            val intent = android.content.Intent(this, ScanQRActivity::class.java)
             startActivity(intent)
         }
 
         fabScan.setOnTouchListener(touchListener95)
         fabScan.setOnClickListener {
-            val intent = Intent(this, ScanQRActivity::class.java)
+            val intent = android.content.Intent(this, ScanQRActivity::class.java)
             startActivity(intent)
         }
 
         tabMyPass.setOnClickListener {
-            // Already on My Pass
+            loadPassData()
         }
 
         tabProfile.setOnClickListener {
@@ -250,6 +329,71 @@ class DigitalPassActivity : AppCompatActivity() {
 
         topBarAvatar.setOnClickListener {
             Toast.makeText(this, "Profile", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun loadPassData() {
+        passProgressBar.visibility = View.VISIBLE
+        layoutPassError.visibility = View.GONE
+
+        lifecycleScope.launch {
+            val result = digitalPassRepository.getMyDigitalPass()
+            passProgressBar.visibility = View.GONE
+
+            result.onSuccess { data ->
+                layoutPassError.visibility = View.GONE
+                cardPass.visibility = View.VISIBLE
+                currentPassData = data
+                bindPassData(data)
+            }.onFailure { error ->
+                layoutPassError.visibility = View.VISIBLE
+                val message = when (error) {
+                    is NoActivePassException -> getString(R.string.error_no_active_pass)
+                    is PassAuthException -> getString(R.string.error_auth_required)
+                    else -> error.message ?: getString(R.string.error_pass_load_failed)
+                }
+                tvPassErrorMessage.text = message
+            }
+        }
+    }
+
+    private fun bindPassData(data: MyPassResponseData) {
+        val pass = data.pass
+        val holder = data.holder
+
+        tvUserName.text = holder.fullName.ifBlank { getString(R.string.pass_holder_name) }
+        tvUserRole.text = holder.title?.takeIf { it.isNotBlank() } ?: getString(R.string.pass_holder_role)
+        tvUserOrg.text = holder.organization?.takeIf { it.isNotBlank() } ?: getString(R.string.pass_holder_org)
+        badgeVerified.visibility = if (holder.isVerified) View.VISIBLE else View.GONE
+
+        tvPassNumber.text = pass.passNumber
+        tvPassTier.text = "${pass.tier} PASS"
+
+        renderQrCode(pass.qrPayload)
+    }
+
+    /**
+     * Renders a crisp QR code Bitmap using ZXing and updates [ivQrCode].
+     */
+    private fun renderQrCode(payload: String) {
+        if (payload.isBlank()) return
+        try {
+            val size = 512
+            val hints = mapOf(
+                EncodeHintType.MARGIN to 1,
+                EncodeHintType.ERROR_CORRECTION to ErrorCorrectionLevel.M
+            )
+            val bitMatrix = QRCodeWriter().encode(payload, BarcodeFormat.QR_CODE, size, size, hints)
+            val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+            for (x in 0 until size) {
+                for (y in 0 until size) {
+                    bitmap.setPixel(x, y, if (bitMatrix.get(x, y)) Color.parseColor("#111827") else Color.WHITE)
+                }
+            }
+            ivQrCode.clearColorFilter()
+            ivQrCode.setImageBitmap(bitmap)
+        } catch (e: Exception) {
+            Log.e("DigitalPassActivity", "Failed to render QR code", e)
         }
     }
 

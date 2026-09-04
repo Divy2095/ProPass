@@ -289,6 +289,32 @@
                                 app:tint="@color/on_surface" />
                         </FrameLayout>
 
+                        <!-- Pass Number & Tier Details -->
+                        <TextView
+                            android:id="@+id/tvPassNumber"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:fontFamily="@font/inter_semibold"
+                            android:includeFontPadding="false"
+                            android:letterSpacing="0.05"
+                            android:textColor="@color/on_surface"
+                            android:textSize="14sp"
+                            tools:text="PP-2024-0042" />
+
+                        <TextView
+                            android:id="@+id/tvPassTier"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:fontFamily="@font/inter_medium"
+                            android:includeFontPadding="false"
+                            android:letterSpacing="0.08"
+                            android:textAllCaps="true"
+                            android:textColor="@color/primary"
+                            android:textSize="11sp"
+                            tools:text="STANDARD PASS" />
+
                     </LinearLayout>
 
                 </LinearLayout>
@@ -392,6 +418,45 @@
         </LinearLayout>
 
     </androidx.core.widget.NestedScrollView>
+
+    <!-- Centered Loading State -->
+    <ProgressBar
+        android:id="@+id/passProgressBar"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_gravity="center"
+        android:indeterminateTint="@color/primary"
+        android:visibility="gone" />
+
+    <!-- Error State Overlay -->
+    <LinearLayout
+        android:id="@+id/layoutPassError"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/tvPassErrorMessage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/inter_medium"
+            android:gravity="center"
+            android:text="@string/error_pass_load_failed"
+            android:textColor="@color/on_surface_variant"
+            android:textSize="14sp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnPassRetry"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="@string/action_retry" />
+    </LinearLayout>
 
     <!-- Fixed Top App Bar -->
     <LinearLayout

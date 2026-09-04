@@ -11,12 +11,20 @@ import android.view.View
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
+import com.mpc.propass.data.repository.DuplicateRegistrationException
+import com.mpc.propass.data.repository.RegistrationAuthException
+import com.mpc.propass.data.repository.RegistrationRepository
+import com.mpc.propass.data.repository.RegistrationValidationException
+import com.mpc.propass.network.model.RegistrationPurposeMapper
+import kotlinx.coroutines.launch
 
 /**
  * Review Registration screen for ProPass Digital Identity System.
@@ -27,6 +35,12 @@ class ReviewRegistrationActivity : AppCompatActivity() {
     companion object {
         const val EXTRA_REGISTRATION_DATA = "EXTRA_REGISTRATION_DATA"
     }
+
+    private val registrationRepository: RegistrationRepository by lazy {
+        (application as ProPassApplication).registrationRepository
+    }
+
+    private var isSubmitting: Boolean = false
 
     private lateinit var reviewRoot: FrameLayout
     private lateinit var topAppBar: LinearLayout
@@ -176,17 +190,61 @@ class ReviewRegistrationActivity : AppCompatActivity() {
         // Submit Registration button
         btnSubmitRegistration.setOnTouchListener(touchListener98)
         btnSubmitRegistration.setOnClickListener { view ->
+            if (isSubmitting) return@setOnClickListener
+            val data = registrationData ?: return@setOnClickListener
+
             view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+            isSubmitting = true
             btnSubmitRegistration.isEnabled = false
             btnSubmitRegistration.text = getString(R.string.review_submitting)
 
-            Handler(Looper.getMainLooper()).postDelayed({
-                val intent = Intent(this, RegistrationSuccessActivity::class.java).apply {
-                    putExtra(RegistrationSuccessActivity.EXTRA_REGISTRATION_DATA, registrationData)
+            lifecycleScope.launch {
+                val backendPurpose = RegistrationPurposeMapper.toBackendPurpose(data.purpose)
+                val result = registrationRepository.createRegistration(
+                    eventId = data.eventId,
+                    fullName = data.fullName,
+                    email = data.email,
+                    institution = data.institution,
+                    purpose = backendPurpose,
+                    durationDays = data.durationDays,
+                    vehicleNumber = data.vehicleNumber
+                )
+
+                result.onSuccess { responseData ->
+                    isSubmitting = false
+                    val reg = responseData.registration
+                    val confirmedData = RegistrationData(
+                        eventId = reg.event?.slug?.ifBlank { reg.eventId } ?: data.eventId,
+                        eventName = reg.event?.title?.ifBlank { data.eventName } ?: data.eventName,
+                        fullName = reg.fullName,
+                        email = reg.email,
+                        institution = reg.institution,
+                        purpose = RegistrationPurposeMapper.toFriendlyDisplay(reg.purpose),
+                        durationDays = reg.durationDays,
+                        vehicleNumber = reg.vehicleNumber
+                    )
+
+                    val intent = Intent(this@ReviewRegistrationActivity, RegistrationSuccessActivity::class.java).apply {
+                        putExtra(RegistrationSuccessActivity.EXTRA_REGISTRATION_DATA, confirmedData)
+                    }
+                    startActivity(intent)
+                    finish()
+                }.onFailure { error ->
+                    isSubmitting = false
+                    btnSubmitRegistration.isEnabled = true
+                    btnSubmitRegistration.text = getString(R.string.btn_submit_registration)
+                    btnSubmitRegistration.performHapticFeedback(HapticFeedbackConstants.REJECT)
+
+                    val errorMessage = when (error) {
+                        is DuplicateRegistrationException -> error.message ?: getString(R.string.error_duplicate_registration)
+                        is RegistrationValidationException -> error.message ?: getString(R.string.error_registration_failed)
+                        is RegistrationAuthException -> getString(R.string.error_auth_required)
+                        else -> error.message ?: getString(R.string.error_registration_failed)
+                    }
+
+                    Toast.makeText(this@ReviewRegistrationActivity, errorMessage, Toast.LENGTH_LONG).show()
                 }
-                startActivity(intent)
-                finish()
-            }, 450)
+            }
         }
     }
 

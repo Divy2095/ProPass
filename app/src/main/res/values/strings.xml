@@ -166,4 +166,11 @@
     <string name="error_event_inactive">This event is no longer active or has concluded</string>
     <string name="error_event_validation_failed">Event validation failed</string>
     <string name="toast_event_verified">Verified: %1$s</string>
+
+    <!-- Phase 3E Registration & Digital Pass Strings -->
+    <string name="error_duplicate_registration">You are already registered for this event</string>
+    <string name="error_registration_failed">Failed to submit registration</string>
+    <string name="error_no_active_pass">No active digital pass found for this user account</string>
+    <string name="error_pass_load_failed">Failed to load digital pass</string>
+    <string name="error_auth_required">Authentication required. Please sign in again.</string>
 </resources>

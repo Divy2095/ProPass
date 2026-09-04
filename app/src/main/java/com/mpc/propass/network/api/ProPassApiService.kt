@@ -92,16 +92,16 @@ interface ProPassApiService {
 
     @POST("api/v1/registrations")
     suspend fun createRegistration(
-        @Body request: Map<String, @JvmSuppressWildcards Any?>
-    ): Response<ApiResponse<Map<String, Any?>>>
+        @Body request: com.mpc.propass.network.model.CreateRegistrationRequest
+    ): Response<ApiResponse<com.mpc.propass.network.model.CreateRegistrationResponseData>>
 
     @GET("api/v1/registrations/my")
-    suspend fun getMyRegistrations(): Response<ApiResponse<Map<String, Any?>>>
+    suspend fun getMyRegistrations(): Response<ApiResponse<com.mpc.propass.network.model.MyRegistrationsResponseData>>
 
     // ==========================================
     // Digital Pass (Phase 2E)
     // ==========================================
 
     @GET("api/v1/passes/me")
-    suspend fun getMyDigitalPass(): Response<ApiResponse<Map<String, Any?>>>
+    suspend fun getMyDigitalPass(): Response<ApiResponse<com.mpc.propass.network.model.MyPassResponseData>>
 }

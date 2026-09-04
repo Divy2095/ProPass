@@ -453,7 +453,7 @@ npm run dev
 All listed features have been executed and verified on physical hardware & development environment:
 
 * [x] **Android Gradle Build:** `./gradlew assembleDebug` builds with 0 errors (`BUILD SUCCESSFUL`).
-* [x] **Android Unit Tests:** 49/49 unit tests passing across 13 test suites (`./gradlew testDebugUnitTest`).
+* [x] **Android Unit Tests:** 82/82 unit tests passing across 19 test suites (`./gradlew testDebugUnitTest`).
 * [x] **Android Physical Device Features:** Live CameraX viewfinder, physical torch, ML Kit QR detection, local QR validation, Smart Form validation, Review & Success flows verified on device `KVAMAAXSPNOV7PXC`.
 * [x] **Backend Foundation (Phase 1):**
   * Node.js v22 + TypeScript + Fastify + Prisma initialized.
@@ -513,7 +513,24 @@ All listed features have been executed and verified on physical hardware & devel
     * Tier 2: Authoritative backend validation with `@Volatile isValidationInProgress` duplicate frame suppression and throttling of repeated failures.
     * User feedback: Real-time hint state ("Validating event with ProPass..."), haptic buzz on success/rejection, verification toast with event title, and tailored error toasts (400 Invalid format, 404 Event not found, 410 Event inactive, network failure).
   * `SmartFormRegistrationActivity` binds real backend event details (`title`, `overline`, `subtitle`, `location`, `maxDuration`, `qrPayload`), dynamically enforcing backend `maxDuration` limits on the duration input.
-  * 63/63 unit tests passing across 15 test suites (`./gradlew testDebugUnitTest`).
+* [x] **Android Registration & Digital Pass Integration (Phase 3E):**
+  * Lightweight ZXing core integrated (`com.google.zxing:core:3.5.3`) for offline client-side QR bitmap rendering.
+  * Typed Moshi models created: `CreateRegistrationRequest`, `RegistrationEventDto`, `RegistrationDto`, `CreateRegistrationResponseData`, `MyRegistrationsResponseData`, `FullDigitalPassDto`, `PassHolderDto`, `MyPassResponseData`.
+  * `RegistrationPurposeMapper` cleanly maps UI radio labels to backend canonical enum values (`GENERAL_ATTENDEE`, `SPEAKER`, `SPONSOR_EXHIBITOR`, `MEDIA_PRESS`).
+  * `RegistrationRepository` (`RegistrationRepositoryImpl`) implements `createRegistration` (`POST /api/v1/registrations`) and `getMyRegistrations` (`GET /api/v1/registrations/my`) with typed exceptions: `DuplicateRegistrationException` (409 Conflict), `RegistrationValidationException` (400 Bad Request), `RegistrationAuthException` (401 Unauthorized), `RegistrationNotFoundException` (404 Not Found).
+  * `DigitalPassRepository` (`DigitalPassRepositoryImpl`) implements `getMyDigitalPass` (`GET /api/v1/passes/me`) with typed exceptions: `NoActivePassException` (404 Not Found), `PassAuthException` (401 Unauthorized).
+  * `ReviewRegistrationActivity` connected to live backend registration endpoint:
+    * Replaced mock delayed handler with asynchronous coroutine call to `RegistrationRepository.createRegistration(...)`.
+    * Implemented single-submission guard (`isSubmitting`) disabling the confirm button and showing a progress state.
+    * Robust duplicate prevention: catches `DuplicateRegistrationException` (409 Conflict), provides haptic rejection buzz and clear user notification without advancing to success screen.
+    * Navigates to `RegistrationSuccessActivity` on 201 Created with confirmed backend pass details.
+  * `DigitalPassActivity` connected to live backend pass endpoint:
+    * Asynchronously fetches active pass and holder profile via `DigitalPassRepository.getMyDigitalPass()`.
+    * Renders 512x512 QR code bitmap dynamically from backend `qrPayload` via `QRCodeWriter` and sets it on `ivQrCode`.
+    * Binds live data: pass holder name, professional title, organization, pass number, pass tier, and verified badge.
+    * Interactive contact actions: email intent, phone dialer intent, and LinkedIn web intent populated from holder profile.
+    * Handles loading with centered progress bar and error states with a retry button.
+  * 82/82 unit tests passing across 19 test suites (`./gradlew testDebugUnitTest`).
   * Full Android debug build clean: `./gradlew assembleDebug` (`BUILD SUCCESSFUL`).
 
 ---
@@ -530,7 +547,7 @@ All listed features have been executed and verified on physical hardware & devel
 * [x] **Phase 3B: Token Storage & Authentication Integration** (Completed)
 * [x] **Phase 3C: User & Dashboard Integration** (Completed)
 * [x] **Phase 3D: Event & QR Scanning Integration** (Completed)
-* [ ] **Phase 3E: Registration & Digital Pass Integration**
+* [x] **Phase 3E: Registration & Digital Pass Integration** (Completed)
 * [ ] **Phase 4: Frontend Screen Integration & Mock Replacement**
 * [ ] **Phase 5: End-to-End Testing & Physical Device Verification**
 
@@ -538,7 +555,7 @@ All listed features have been executed and verified on physical hardware & devel
 
 ## 18. Current Stopping Point
 
-> **Phase 3D Complete:** Event & QR Scanning integration established with typed Moshi DTOs, `ProPassQrParser` local format validator, `EventRepository`, two-tier validation in `ScanQRActivity` (local regex filter + authoritative backend validation with duplicate suppression), real backend event data binding in `SmartFormRegistrationActivity`, and comprehensive MockWebServer tests. Android build clean (0 errors, 63/63 unit tests passing across 15 suites). Ready for Phase 3E upon user approval.  
+> **Phase 3E Complete:** Registration submission and Digital Pass retrieval integrated with backend APIs (`POST /api/v1/registrations`, `GET /api/v1/passes/me`). Features typed Moshi DTOs, `RegistrationPurposeMapper`, `RegistrationRepository` with duplicate registration handling (409 Conflict), `DigitalPassRepository`, ZXing-based dynamic QR bitmap rendering in `DigitalPassActivity`, real holder data binding, interactive contact intents, loading and error retry states in `activity_digital_pass.xml`, and comprehensive MockWebServer tests. Android build clean (0 errors, 82/82 unit tests passing across 19 suites). Ready for Phase 4 upon user review.  
 > *Updated on: September 4, 2026*
 
 
