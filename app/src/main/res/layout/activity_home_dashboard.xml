@@ -10,6 +10,17 @@
     android:clipToPadding="false"
     tools:context=".HomeDashboardActivity">
 
+    <!-- Subtle Loading Progress Indicator -->
+    <ProgressBar
+        android:id="@+id/dashboardProgressBar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="4dp"
+        android:layout_gravity="top"
+        android:indeterminate="true"
+        android:visibility="gone"
+        android:elevation="10dp" />
+
     <!-- Scrollable Dashboard Content -->
     <androidx.core.widget.NestedScrollView
         android:id="@+id/dashboardScrollView"
@@ -58,6 +69,7 @@
                         android:textSize="14sp" />
 
                     <TextView
+                        android:id="@+id/tvHomeUserName"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
@@ -157,6 +169,7 @@
                                 android:orientation="vertical">
 
                                 <TextView
+                                    android:id="@+id/tvPassTier"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_marginBottom="16dp"
@@ -174,6 +187,7 @@
                                     android:textSize="12sp" />
 
                                 <TextView
+                                    android:id="@+id/tvPassUserName"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_marginBottom="2dp"
@@ -184,6 +198,7 @@
                                     android:textSize="22sp" />
 
                                 <TextView
+                                    android:id="@+id/tvPassUserRole"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:fontFamily="@font/inter_regular"
@@ -193,6 +208,7 @@
                                     android:textSize="14sp" />
 
                                 <TextView
+                                    android:id="@+id/tvPassUserOrg"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_marginTop="16dp"
@@ -479,6 +495,7 @@
                             android:orientation="vertical">
 
                             <TextView
+                                android:id="@+id/tvActivity1Title"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:fontFamily="@font/inter_semibold"
@@ -488,6 +505,7 @@
                                 android:textSize="20sp" />
 
                             <TextView
+                                android:id="@+id/tvActivity1Subtitle"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
@@ -549,6 +567,7 @@
                             android:orientation="vertical">
 
                             <TextView
+                                android:id="@+id/tvActivity2Title"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:fontFamily="@font/inter_semibold"
@@ -558,6 +577,7 @@
                                 android:textSize="20sp" />
 
                             <TextView
+                                android:id="@+id/tvActivity2Subtitle"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
@@ -578,6 +598,21 @@
                     </LinearLayout>
 
                 </com.google.android.material.card.MaterialCardView>
+
+                <!-- Empty state when no activity exists -->
+                <TextView
+                    android:id="@+id/tvNoRecentActivity"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="8dp"
+                    android:fontFamily="@font/inter_regular"
+                    android:gravity="center"
+                    android:padding="16dp"
+                    android:text="@string/no_recent_activity"
+                    android:textColor="@color/on_surface_variant"
+                    android:textSize="14sp"
+                    android:visibility="gone" />
 
             </LinearLayout>
 

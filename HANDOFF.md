@@ -297,10 +297,14 @@ From [`gradle/libs.versions.toml`](file:///home/divy/AndroidProjects/ProPass/gra
 * `network/interceptor/TokenProvider.kt` — Abstraction for providing authentication tokens (`TokenProvider`, `InMemoryTokenProvider`, `NoOpTokenProvider`).
 * `network/interceptor/DataStoreTokenProvider.kt` — Non-blocking `TokenProvider` delegating to `TokenStorage` for OkHttp `AuthInterceptor`.
 * `network/interceptor/AuthInterceptor.kt` — OkHttp interceptor injecting `Authorization: Bearer <token>` and `Accept: application/json`.
-* `network/api/ProPassApiService.kt` — Retrofit 2 service interface mapping all Phase 1 and Phase 2 backend REST endpoints with typed auth models.
+* `network/api/ProPassApiService.kt` — Retrofit 2 service interface mapping all Phase 1 and Phase 2 backend REST endpoints with typed auth, profile, and dashboard models.
 * `network/NetworkClient.kt` — Factory and singleton building Moshi, OkHttpClient with auth/logging interceptors, and Retrofit 2.
+* `network/model/UserModels.kt` — Moshi DTOs for User & Profile (`UserProfileDto`, `UserProfileResponseData`, `UpdateProfileRequest`).
+* `network/model/DashboardModels.kt` — Moshi DTOs for Home Dashboard (`DashboardPassDto`, `DashboardRecentActivityDto`, `DashboardResponseData`).
 * `data/local/TokenStorage.kt` — Token storage interface & `DataStoreTokenStorage` using Jetpack Preferences DataStore with volatile cache.
 * `data/repository/AuthRepository.kt` — Authentication repository (`login`, `register`, `refreshToken`, `logout`, `checkSession`, `hasActiveSession`) with Moshi error handling.
+* `data/repository/UserRepository.kt` — User & Profile repository (`getUserProfile`, `updateUserProfile`) with Moshi error handling.
+* `data/repository/DashboardRepository.kt` — Home Dashboard repository (`getDashboard`) with Moshi error handling.
 * `ProPassApplication.kt` — Application entrypoint initializing `TokenStorage`, registering `DataStoreTokenProvider` with `NetworkClient`, and exposing repository dependencies.
 
 ### Backend Sources (`backend/`):
@@ -357,6 +361,7 @@ From [`gradle/libs.versions.toml`](file:///home/divy/AndroidProjects/ProPass/gra
 * `activity_review_registration.xml`
 * `activity_registration_success.xml`
 * `item_dropdown_popup.xml`
+* `dialog_edit_profile.xml`
 
 ### Key Resource Files:
 * `app/src/main/res/values/colors.xml` — ProPass color tokens (Primary `#0032D7`, Surface Container `#F0F4F9`, Background `#F8F9FA`, Error `#BA1A1A`, etc.).
@@ -370,11 +375,15 @@ From [`gradle/libs.versions.toml`](file:///home/divy/AndroidProjects/ProPass/gra
 * `app/src/test/java/com/mpc/propass/network/NetworkConfigTest.kt` — Tests for base URL normalization, default emulator host, and timeout configurations.
 * `app/src/test/java/com/mpc/propass/network/AuthInterceptorTest.kt` — Tests for Bearer token injection, Accept headers, and explicit header preservation.
 * `app/src/test/java/com/mpc/propass/network/ApiResponseParsingTest.kt` — Tests for Moshi serialization and deserialization of standard Fastify envelopes and error models.
+* `app/src/test/java/com/mpc/propass/network/UserResponseParsingTest.kt` — Tests for User and Profile DTO serialization/deserialization.
+* `app/src/test/java/com/mpc/propass/network/DashboardResponseParsingTest.kt` — Tests for Dashboard response and recent activity deserialization.
 * `app/src/test/java/com/mpc/propass/network/NetworkClientIntegrationTest.kt` — MockWebServer end-to-end integration tests for Retrofit + OkHttp + Moshi.
 * `app/src/test/java/com/mpc/propass/data/local/TokenStorageTest.kt` — Unit tests for DataStore token persistence and in-memory cache operations.
 * `app/src/test/java/com/mpc/propass/data/local/FakeTokenStorage.kt` — In-memory test double for `TokenStorage`.
 * `app/src/test/java/com/mpc/propass/network/interceptor/DataStoreTokenProviderTest.kt` — Unit tests for non-blocking token provider delegation.
 * `app/src/test/java/com/mpc/propass/data/repository/AuthRepositoryTest.kt` — MockWebServer unit tests for login, register, token refresh, logout, and session restoration.
+* `app/src/test/java/com/mpc/propass/data/repository/UserRepositoryTest.kt` — MockWebServer unit tests for profile retrieval, profile updates, validation errors, and network failures.
+* `app/src/test/java/com/mpc/propass/data/repository/DashboardRepositoryTest.kt` — MockWebServer unit tests for aggregated dashboard data, empty activities, and error handling.
 * `backend/tests/health.test.ts` — Backend Fastify health check test suite (2 tests passed).
 * `backend/tests/auth.test.ts` — Backend authentication test suite (14 tests passed).
 * `backend/tests/user.test.ts` — Backend user profile & dashboard test suite (8 tests passed).
@@ -432,9 +441,10 @@ npm run dev
 
 ## 15. Known Limitations (Current Phase)
 
-1. **Android Authentication & Token Persistence (Phase 3B):** Jetpack Preferences DataStore token persistence (`DataStoreTokenStorage`), non-blocking `DataStoreTokenProvider`, `AuthRepository`, session restoration in `SplashActivity`, and real login in `LoginActivity` are completed. User profile, dashboard, events, registration, and digital pass UI screens remain on local/mock data until Phase 3C/3D/3E.
-2. **Android Network Integration:** User profile, dashboard, events, registration, and digital pass UI screens currently run on local/mock data until Phase 3C/3D/3E/4 integration.
-3. **Mock Actions:** External wallet export, social sharing, and contact buttons on Android generate UI Toast feedback.
+1. **Android User & Dashboard Integration (Phase 3C):** Real profile retrieval, backend-aggregated dashboard loading, interactive profile editing dialog (`PUT /api/v1/users/profile`), dynamic completion score recalculation, and session logout via profile dialog are completed. Events, QR code scanner validation, registration submission, and full digital pass screen remain on local/mock data until Phase 3D and 3E.
+2. **Android Network Integration:** Events, QR scanning validation, event registration submission, and full digital pass screen currently run on local/mock data until Phase 3D/3E integration.
+3. **Transparent Token Refresh:** Network calls currently use the authenticated token in DataStore; if a session becomes completely invalid (401), the app displays a session expiration message and routes to `LoginActivity`. Background transparent 401 retry interceptor can be evaluated in a later phase.
+4. **Mock Actions:** External wallet export, social sharing, and contact buttons on Android generate UI Toast feedback.
 
 ---
 
@@ -443,7 +453,7 @@ npm run dev
 All listed features have been executed and verified on physical hardware & development environment:
 
 * [x] **Android Gradle Build:** `./gradlew assembleDebug` builds with 0 errors (`BUILD SUCCESSFUL`).
-* [x] **Android Unit Tests:** 29/29 unit tests passing across 9 test suites (`./gradlew testDebugUnitTest`).
+* [x] **Android Unit Tests:** 49/49 unit tests passing across 13 test suites (`./gradlew testDebugUnitTest`).
 * [x] **Android Physical Device Features:** Live CameraX viewfinder, physical torch, ML Kit QR detection, local QR validation, Smart Form validation, Review & Success flows verified on device `KVAMAAXSPNOV7PXC`.
 * [x] **Backend Foundation (Phase 1):**
   * Node.js v22 + TypeScript + Fastify + Prisma initialized.
@@ -483,7 +493,18 @@ All listed features have been executed and verified on physical hardware & devel
   * Custom `ProPassApplication` class initializes storage, registers provider with `NetworkClient`, and provides repository singleton.
   * `LoginActivity` wired to real backend login with loading state on login button, error state display, and navigation to `HomeDashboardActivity`.
   * `SplashActivity` checks session via `AuthRepository.hasActiveSession()` and routes to `HomeDashboardActivity` if authenticated, or `LoginActivity` if not.
-  * 29/29 unit tests passing across 9 test suites (`./gradlew testDebugUnitTest`).
+* [x] **Android User & Dashboard Integration (Phase 3C):**
+  * Typed Moshi models created: `UserProfileDto`, `UserProfileResponseData`, `UpdateProfileRequest`, `DashboardPassDto`, `DashboardRecentActivityDto`, `DashboardResponseData`.
+  * `UserRepository` (`UserRepositoryImpl`) implements profile retrieval (`GET /api/v1/users/profile`) and updates (`PUT /api/v1/users/profile`).
+  * `DashboardRepository` (`DashboardRepositoryImpl`) implements aggregated dashboard data fetching (`GET /api/v1/dashboard`).
+  * `HomeDashboardActivity` wired to real backend dashboard API via coroutines:
+    * Greeting dynamically populated from backend (`Hello, <name>`).
+    * Digital pass card bound to backend pass tier, user full name, professional title, and organization.
+    * Radial progress ring animated dynamically to backend `completionScore` with percentage text.
+    * Recent activity list dynamically rendered from backend registrations, with empty-state handling.
+    * Profile editing flow connected via `dialog_edit_profile.xml` (`btnAddDetails`), submitting updates to `PUT /api/v1/users/profile` and refreshing dashboard metrics.
+    * Profile & session management dialog on Profile tab and avatar icons with full profile inspection and secure logout.
+  * 49/49 unit tests passing across 13 test suites (`./gradlew testDebugUnitTest`).
   * Full Android debug build clean: `./gradlew assembleDebug` (`BUILD SUCCESSFUL`).
 
 ---
@@ -498,7 +519,7 @@ All listed features have been executed and verified on physical hardware & devel
 * [x] **Phase 2E: Digital Pass API** (Completed)
 * [x] **Phase 3A: Android Networking Foundation** (Completed)
 * [x] **Phase 3B: Token Storage & Authentication Integration** (Completed)
-* [ ] **Phase 3C: User & Dashboard Integration**
+* [x] **Phase 3C: User & Dashboard Integration** (Completed)
 * [ ] **Phase 3D: Event & QR Scanning Integration**
 * [ ] **Phase 3E: Registration & Digital Pass Integration**
 * [ ] **Phase 4: Frontend Screen Integration & Mock Replacement**
@@ -508,7 +529,7 @@ All listed features have been executed and verified on physical hardware & devel
 
 ## 18. Current Stopping Point
 
-> **Phase 3B Complete:** Token storage & authentication integration established with Jetpack Preferences DataStore, in-memory caching for non-blocking OkHttp interceptor reads, typed Moshi auth DTOs, full `AuthRepository`, `ProPassApplication`, session restoration routing in `SplashActivity`, and real login integration in `LoginActivity`. Android build clean (0 errors, 29/29 unit tests passing across 9 suites). Ready for Phase 3C upon user approval.  
+> **Phase 3C Complete:** User Profile & Home Dashboard integration established with typed Moshi DTOs, `UserRepository`, `DashboardRepository`, live dashboard binding in `HomeDashboardActivity` (greetings, digital pass preview, animated profile completion ring, real PostgreSQL recent activities), interactive profile editing dialog via `PUT /api/v1/users/profile`, and profile/session logout management. Android build clean (0 errors, 49/49 unit tests passing across 13 suites). Ready for Phase 3D upon user approval.  
 > *Updated on: September 4, 2026*
 
 

@@ -4,11 +4,13 @@ import android.animation.ValueAnimator
 import android.content.Intent
 import android.os.Bundle
 import android.util.TypedValue
+import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.FrameLayout
 import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -16,8 +18,20 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.textfield.TextInputEditText
+import com.mpc.propass.data.repository.AuthRepository
+import com.mpc.propass.data.repository.DashboardRepository
+import com.mpc.propass.data.repository.UserRepository
+import com.mpc.propass.network.model.AuthUserDto
+import com.mpc.propass.network.model.DashboardResponseData
+import com.mpc.propass.network.model.UpdateProfileRequest
+import com.mpc.propass.network.model.UserProfileDto
+import kotlinx.coroutines.launch
 
 /**
  * Home Dashboard screen implementation for ProPass Digital Identity System.
@@ -26,8 +40,8 @@ import com.google.android.material.card.MaterialCardView
  * - Greeting header ("Hello, Sarah") with online status dot
  * - Royal blue Digital Pass preview card with QR code and premium badge
  * - 2-column quick actions ("Scan QR", "My Pass")
- * - Profile completion card with animated 85% radial progress ring and "Add Details" button
- * - Recent activity feed with contextual badges (TechConf 2024, Google Office Visit)
+ * - Profile completion card with animated radial progress ring and "Add Details" / "Edit Profile" button
+ * - Recent activity feed with live PostgreSQL registration activity
  * - Fixed bottom navigation bar with elevated center Scan action button
  */
 class HomeDashboardActivity : AppCompatActivity() {
@@ -37,23 +51,55 @@ class HomeDashboardActivity : AppCompatActivity() {
     private lateinit var topBarSpacer: View
     private lateinit var bottomNavBar: LinearLayout
     private lateinit var bottomBarSpacer: View
+    private lateinit var dashboardProgressBar: ProgressBar
 
+    // Greeting section
+    private lateinit var tvHomeUserName: TextView
+    private lateinit var headerAvatarContainer: FrameLayout
+    private lateinit var topBarAvatar: FrameLayout
+
+    // Digital Pass preview card
     private lateinit var cardDigitalPass: MaterialCardView
+    private lateinit var tvPassTier: TextView
+    private lateinit var tvPassUserName: TextView
+    private lateinit var tvPassUserRole: TextView
+    private lateinit var tvPassUserOrg: TextView
+
+    // Quick Actions
     private lateinit var cardScanQr: MaterialCardView
     private lateinit var cardMyPass: MaterialCardView
+
+    // Profile Completion card
     private lateinit var cardProfileCompletion: MaterialCardView
     private lateinit var btnAddDetails: MaterialButton
     private lateinit var progressCircle: CircularProgressView
     private lateinit var tvProgressPercent: TextView
 
+    // Recent Activity items
     private lateinit var itemActivity1: MaterialCardView
+    private lateinit var tvActivity1Title: TextView
+    private lateinit var tvActivity1Subtitle: TextView
     private lateinit var itemActivity2: MaterialCardView
+    private lateinit var tvActivity2Title: TextView
+    private lateinit var tvActivity2Subtitle: TextView
+    private lateinit var tvNoRecentActivity: TextView
 
+    // Bottom Navigation tabs
     private lateinit var tabHome: LinearLayout
     private lateinit var tabScan: FrameLayout
     private lateinit var tabMyPass: LinearLayout
     private lateinit var tabProfile: LinearLayout
     private lateinit var fabScan: FrameLayout
+
+    // Repositories
+    private val app: ProPassApplication by lazy { application as ProPassApplication }
+    private val authRepository: AuthRepository by lazy { app.authRepository }
+    private val userRepository: UserRepository by lazy { app.userRepository }
+    private val dashboardRepository: DashboardRepository by lazy { app.dashboardRepository }
+
+    // Cached state
+    private var cachedProfile: UserProfileDto? = null
+    private var cachedUser: AuthUserDto? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,8 +108,8 @@ class HomeDashboardActivity : AppCompatActivity() {
 
         initViews()
         applyWindowInsets()
-        startProgressRingAnimation()
         setupInteractions()
+        loadDashboardData()
     }
 
     private fun setupEdgeToEdge() {
@@ -79,18 +125,40 @@ class HomeDashboardActivity : AppCompatActivity() {
         topBarSpacer = findViewById(R.id.topBarSpacer)
         bottomNavBar = findViewById(R.id.bottomNavBar)
         bottomBarSpacer = findViewById(R.id.bottomBarSpacer)
+        dashboardProgressBar = findViewById(R.id.dashboardProgressBar)
 
+        // Greeting
+        tvHomeUserName = findViewById(R.id.tvHomeUserName)
+        headerAvatarContainer = findViewById(R.id.headerAvatarContainer)
+        topBarAvatar = findViewById(R.id.topBarAvatar)
+
+        // Pass card
         cardDigitalPass = findViewById(R.id.cardDigitalPass)
+        tvPassTier = findViewById(R.id.tvPassTier)
+        tvPassUserName = findViewById(R.id.tvPassUserName)
+        tvPassUserRole = findViewById(R.id.tvPassUserRole)
+        tvPassUserOrg = findViewById(R.id.tvPassUserOrg)
+
+        // Quick Actions
         cardScanQr = findViewById(R.id.cardScanQr)
         cardMyPass = findViewById(R.id.cardMyPass)
+
+        // Profile Completion
         cardProfileCompletion = findViewById(R.id.cardProfileCompletion)
         btnAddDetails = findViewById(R.id.btnAddDetails)
         progressCircle = findViewById(R.id.progressCircle)
         tvProgressPercent = findViewById(R.id.tvProgressPercent)
 
+        // Recent Activity
         itemActivity1 = findViewById(R.id.itemActivity1)
+        tvActivity1Title = findViewById(R.id.tvActivity1Title)
+        tvActivity1Subtitle = findViewById(R.id.tvActivity1Subtitle)
         itemActivity2 = findViewById(R.id.itemActivity2)
+        tvActivity2Title = findViewById(R.id.tvActivity2Title)
+        tvActivity2Subtitle = findViewById(R.id.tvActivity2Subtitle)
+        tvNoRecentActivity = findViewById(R.id.tvNoRecentActivity)
 
+        // Navigation
         tabHome = findViewById(R.id.tabHome)
         tabScan = findViewById(R.id.tabScan)
         tabMyPass = findViewById(R.id.tabMyPass)
@@ -134,10 +202,146 @@ class HomeDashboardActivity : AppCompatActivity() {
     }
 
     /**
-     * Smooth clockwise progress ring entrance animation (0% -> 85%).
+     * Loads live aggregated dashboard data from GET /api/v1/dashboard.
      */
-    private fun startProgressRingAnimation() {
-        ValueAnimator.ofFloat(0f, 85f).apply {
+    fun loadDashboardData() {
+        lifecycleScope.launch {
+            dashboardProgressBar.visibility = View.VISIBLE
+
+            val result = dashboardRepository.getDashboard()
+            dashboardProgressBar.visibility = View.GONE
+
+            result.onSuccess { data ->
+                bindDashboardData(data)
+            }.onFailure { error ->
+                handleDashboardError(error)
+            }
+        }
+    }
+
+    /**
+     * Binds real backend data into the existing dashboard UI views.
+     */
+    private fun bindDashboardData(data: DashboardResponseData) {
+        cachedProfile = data.profile
+        cachedUser = data.user
+
+        // 1. Greeting Section
+        val greetingText = if (data.greeting.isNotBlank()) {
+            data.greeting
+        } else {
+            val name = data.profile?.fullName?.trim()?.split(" ")?.firstOrNull()
+                ?: data.user.email.substringBefore("@")
+            "Hello, $name"
+        }
+        tvHomeUserName.text = greetingText
+
+        // 2. Digital Pass Preview Card
+        val passTier = data.pass?.tier ?: "STANDARD"
+        tvPassTier.text = "PROPASS $passTier"
+        tvPassUserName.text = data.profile?.fullName?.ifBlank { null }
+            ?: data.user.email
+        tvPassUserRole.text = data.profile?.title?.ifBlank { null }
+            ?: getString(R.string.pass_user_role)
+        tvPassUserOrg.text = data.profile?.organization?.ifBlank { null }
+            ?: getString(R.string.pass_user_org)
+
+        // 3. Profile Completion Ring
+        val completionScore = data.profile?.completionScore ?: 0
+        animateProgressRing(completionScore.toFloat())
+        tvProgressPercent.text = "${completionScore}%"
+        btnAddDetails.text = if (completionScore >= 100) {
+            getString(R.string.dialog_edit_profile_title)
+        } else {
+            getString(R.string.btn_add_details)
+        }
+
+        // 4. Recent Activity
+        val activities = data.recentActivity
+        if (activities.isEmpty()) {
+            itemActivity1.visibility = View.GONE
+            itemActivity2.visibility = View.GONE
+            tvNoRecentActivity.visibility = View.VISIBLE
+        } else {
+            tvNoRecentActivity.visibility = View.GONE
+
+            // Item 1
+            val act1 = activities[0]
+            itemActivity1.visibility = View.VISIBLE
+            tvActivity1Title.text = act1.eventTitle
+            tvActivity1Subtitle.text = formatActivitySubtitle(act1.purpose, act1.eventLocation)
+            itemActivity1.setOnClickListener {
+                Toast.makeText(
+                    this,
+                    "${act1.eventTitle} (${act1.status})",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+
+            // Item 2
+            if (activities.size > 1) {
+                val act2 = activities[1]
+                itemActivity2.visibility = View.VISIBLE
+                tvActivity2Title.text = act2.eventTitle
+                tvActivity2Subtitle.text = formatActivitySubtitle(act2.purpose, act2.eventLocation)
+                itemActivity2.setOnClickListener {
+                    Toast.makeText(
+                        this,
+                        "${act2.eventTitle} (${act2.status})",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            } else {
+                itemActivity2.visibility = View.GONE
+            }
+        }
+    }
+
+    private fun formatActivitySubtitle(purpose: String?, location: String?): String {
+        val purposeFormatted = purpose
+            ?.replace('_', ' ')
+            ?.lowercase()
+            ?.split(" ")
+            ?.joinToString(" ") { word -> word.replaceFirstChar { it.uppercase() } }
+            ?: "Attendee"
+
+        return if (!location.isNullOrBlank()) {
+            "$purposeFormatted • $location"
+        } else {
+            purposeFormatted
+        }
+    }
+
+    /**
+     * Handles API or network failures with user feedback and retry.
+     */
+    private fun handleDashboardError(error: Throwable) {
+        val message = error.message ?: getString(R.string.dashboard_error_loading)
+
+        if (message.contains("Unauthorized", ignoreCase = true) ||
+            message.contains("Session expired", ignoreCase = true)
+        ) {
+            Toast.makeText(this, "Session expired. Please log in again.", Toast.LENGTH_LONG).show()
+            val intent = Intent(this, LoginActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            }
+            startActivity(intent)
+            finish()
+            return
+        }
+
+        Snackbar.make(homeDashboardRoot, message, Snackbar.LENGTH_INDEFINITE)
+            .setAction(R.string.action_retry) {
+                loadDashboardData()
+            }
+            .show()
+    }
+
+    /**
+     * Smooth radial progress ring animation.
+     */
+    private fun animateProgressRing(targetPercent: Float) {
+        ValueAnimator.ofFloat(0f, targetPercent.coerceIn(0f, 100f)).apply {
             duration = 1200
             interpolator = AccelerateDecelerateInterpolator()
             addUpdateListener { animation ->
@@ -149,7 +353,6 @@ class HomeDashboardActivity : AppCompatActivity() {
     }
 
     private fun setupInteractions() {
-        // Tactile helper for 0.98x scaling
         val touchListener98 = View.OnTouchListener { v, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> v.animate().scaleX(0.98f).scaleY(0.98f).setDuration(100).start()
@@ -158,7 +361,6 @@ class HomeDashboardActivity : AppCompatActivity() {
             false
         }
 
-        // Tactile helper for 0.95x scaling (buttons and grid cards)
         val touchListener95 = View.OnTouchListener { v, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> v.animate().scaleX(0.95f).scaleY(0.95f).setDuration(100).start()
@@ -185,20 +387,14 @@ class HomeDashboardActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
+        // Profile Editing flow
         btnAddDetails.setOnTouchListener(touchListener95)
         btnAddDetails.setOnClickListener {
-            Toast.makeText(this, "Add Profile Details", Toast.LENGTH_SHORT).show()
+            showEditProfileDialog()
         }
 
         itemActivity1.setOnTouchListener(touchListener98)
-        itemActivity1.setOnClickListener {
-            Toast.makeText(this, "TechConf 2024 Form Details", Toast.LENGTH_SHORT).show()
-        }
-
         itemActivity2.setOnTouchListener(touchListener98)
-        itemActivity2.setOnClickListener {
-            Toast.makeText(this, "Google Office Visit Check-in", Toast.LENGTH_SHORT).show()
-        }
 
         fabScan.setOnTouchListener(touchListener95)
         fabScan.setOnClickListener {
@@ -207,7 +403,7 @@ class HomeDashboardActivity : AppCompatActivity() {
         }
 
         tabHome.setOnClickListener {
-            // Already on home
+            loadDashboardData()
         }
 
         tabScan.setOnClickListener {
@@ -220,8 +416,133 @@ class HomeDashboardActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
+        // Profile & Session management
         tabProfile.setOnClickListener {
-            Toast.makeText(this, "Profile", Toast.LENGTH_SHORT).show()
+            showProfileAccountDialog()
+        }
+        topBarAvatar.setOnClickListener {
+            showProfileAccountDialog()
+        }
+        headerAvatarContainer.setOnClickListener {
+            showProfileAccountDialog()
+        }
+    }
+
+    /**
+     * Dialog to edit professional profile fields (Title, Organization, Phone) via PUT /api/v1/users/profile.
+     */
+    private fun showEditProfileDialog() {
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_edit_profile, null)
+        val etTitle = dialogView.findViewById<TextInputEditText>(R.id.etProfileTitle)
+        val etOrg = dialogView.findViewById<TextInputEditText>(R.id.etProfileOrg)
+        val etPhone = dialogView.findViewById<TextInputEditText>(R.id.etProfilePhone)
+
+        // Pre-fill existing profile data
+        cachedProfile?.let { profile ->
+            etTitle.setText(profile.title ?: "")
+            etOrg.setText(profile.organization ?: "")
+            etPhone.setText(profile.phone ?: "")
+        }
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.dialog_edit_profile_title)
+            .setView(dialogView)
+            .setPositiveButton(R.string.btn_save) { dialog, _ ->
+                val newTitle = etTitle.text?.toString()?.trim()
+                val newOrg = etOrg.text?.toString()?.trim()
+                val newPhone = etPhone.text?.toString()?.trim()
+
+                updateProfile(newTitle, newOrg, newPhone)
+                dialog.dismiss()
+            }
+            .setNegativeButton(R.string.btn_cancel, null)
+            .show()
+    }
+
+    /**
+     * Updates user profile on the backend and triggers dashboard refresh.
+     */
+    private fun updateProfile(title: String?, organization: String?, phone: String?) {
+        lifecycleScope.launch {
+            dashboardProgressBar.visibility = View.VISIBLE
+
+            val request = UpdateProfileRequest(
+                title = if (title.isNullOrBlank()) null else title,
+                organization = if (organization.isNullOrBlank()) null else organization,
+                phone = if (phone.isNullOrBlank()) null else phone
+            )
+
+            val result = userRepository.updateUserProfile(request)
+            dashboardProgressBar.visibility = View.GONE
+
+            result.onSuccess { responseData ->
+                Toast.makeText(
+                    this@HomeDashboardActivity,
+                    R.string.profile_updated_toast,
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                // Refresh dashboard to reflect new profile & updated completion score
+                loadDashboardData()
+            }.onFailure { error ->
+                Toast.makeText(
+                    this@HomeDashboardActivity,
+                    error.message ?: "Failed to update profile",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+    }
+
+    /**
+     * Displays profile details and session options (including Logout).
+     */
+    private fun showProfileAccountDialog() {
+        val fullName = cachedProfile?.fullName?.ifBlank { null }
+            ?: cachedUser?.email?.substringBefore("@")
+            ?: "ProPass Member"
+        val email = cachedUser?.email
+            ?: authRepository.getUserEmail()
+            ?: "—"
+        val title = cachedProfile?.title ?: "Not specified"
+        val org = cachedProfile?.organization ?: "Not specified"
+        val score = cachedProfile?.completionScore ?: 0
+        val verified = if (cachedProfile?.isVerified == true) "Verified ✓" else "Standard"
+
+        val message = """
+            Name: $fullName
+            Email: $email
+            Title: $title
+            Organization: $org
+            Status: $verified
+            Completion: $score%
+        """.trimIndent()
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.dialog_profile_account_title)
+            .setMessage(message)
+            .setPositiveButton(R.string.dialog_edit_profile_title) { _, _ ->
+                showEditProfileDialog()
+            }
+            .setNeutralButton(R.string.btn_logout) { _, _ ->
+                performLogout()
+            }
+            .setNegativeButton(R.string.btn_cancel, null)
+            .show()
+    }
+
+    /**
+     * Logs out the user via AuthRepository and returns to LoginActivity.
+     */
+    private fun performLogout() {
+        lifecycleScope.launch {
+            authRepository.logout()
+            Toast.makeText(this@HomeDashboardActivity, "Logged out", Toast.LENGTH_SHORT).show()
+            val intent = Intent(this@HomeDashboardActivity, LoginActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            }
+            startActivity(intent)
+            finish()
         }
     }
 

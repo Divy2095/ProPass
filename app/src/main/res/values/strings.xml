@@ -141,4 +141,21 @@
     <string name="success_description">Your ProPass identity has been successfully submitted.</string>
     <string name="btn_view_my_pass">View My Pass</string>
     <string name="btn_go_home">Go Home</string>
+
+    <!-- Phase 3C User & Dashboard Strings -->
+    <string name="no_recent_activity">No recent activity</string>
+    <string name="dialog_edit_profile_title">Edit Profile</string>
+    <string name="dialog_profile_account_title">Profile &amp; Account</string>
+    <string name="btn_save">Save</string>
+    <string name="btn_cancel">Cancel</string>
+    <string name="btn_logout">Log Out</string>
+    <string name="label_title">Professional Title</string>
+    <string name="hint_title">e.g. Senior Software Engineer</string>
+    <string name="label_organization">Organization</string>
+    <string name="hint_organization">e.g. TechFlow Inc.</string>
+    <string name="label_phone">Phone Number</string>
+    <string name="hint_phone">e.g. +1 (555) 012-3456</string>
+    <string name="profile_updated_toast">Profile updated successfully</string>
+    <string name="dashboard_error_loading">Failed to load dashboard</string>
+    <string name="action_retry">Retry</string>
 </resources>

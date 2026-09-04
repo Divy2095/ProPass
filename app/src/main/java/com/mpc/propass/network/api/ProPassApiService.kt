@@ -62,15 +62,15 @@ interface ProPassApiService {
     // ==========================================
 
     @GET("api/v1/users/profile")
-    suspend fun getUserProfile(): Response<ApiResponse<Map<String, Any?>>>
+    suspend fun getUserProfile(): Response<ApiResponse<com.mpc.propass.network.model.UserProfileResponseData>>
 
     @PUT("api/v1/users/profile")
     suspend fun updateUserProfile(
-        @Body request: Map<String, @JvmSuppressWildcards Any?>
-    ): Response<ApiResponse<Map<String, Any?>>>
+        @Body request: com.mpc.propass.network.model.UpdateProfileRequest
+    ): Response<ApiResponse<com.mpc.propass.network.model.UserProfileResponseData>>
 
     @GET("api/v1/dashboard")
-    suspend fun getDashboard(): Response<ApiResponse<Map<String, Any?>>>
+    suspend fun getDashboard(): Response<ApiResponse<com.mpc.propass.network.model.DashboardResponseData>>
 
     // ==========================================
     // Events & QR Validation (Phase 2C)
