@@ -293,10 +293,15 @@ From [`gradle/libs.versions.toml`](file:///home/divy/AndroidProjects/ProPass/gra
 * `network/config/NetworkConfig.kt` — Centralized base URL configuration, timeouts, and emulator/hardware device routing.
 * `network/model/ApiResponse.kt` — Generic Fastify API response envelope (`success`, `data`, `message`, `error`, `statusCode`, `timestamp`).
 * `network/model/ApiError.kt` — Structured API error and validation error details model.
+* `network/model/AuthModels.kt` — Moshi DTOs for authentication (`LoginRequest`, `RegisterRequest`, `RefreshTokenRequest`, `AuthUserDto`, `AuthTokensDto`, `AuthResponseData`, `RefreshResponseData`, `MeResponseData`).
 * `network/interceptor/TokenProvider.kt` — Abstraction for providing authentication tokens (`TokenProvider`, `InMemoryTokenProvider`, `NoOpTokenProvider`).
+* `network/interceptor/DataStoreTokenProvider.kt` — Non-blocking `TokenProvider` delegating to `TokenStorage` for OkHttp `AuthInterceptor`.
 * `network/interceptor/AuthInterceptor.kt` — OkHttp interceptor injecting `Authorization: Bearer <token>` and `Accept: application/json`.
-* `network/api/ProPassApiService.kt` — Retrofit 2 service interface mapping all Phase 1 and Phase 2 backend REST endpoints.
+* `network/api/ProPassApiService.kt` — Retrofit 2 service interface mapping all Phase 1 and Phase 2 backend REST endpoints with typed auth models.
 * `network/NetworkClient.kt` — Factory and singleton building Moshi, OkHttpClient with auth/logging interceptors, and Retrofit 2.
+* `data/local/TokenStorage.kt` — Token storage interface & `DataStoreTokenStorage` using Jetpack Preferences DataStore with volatile cache.
+* `data/repository/AuthRepository.kt` — Authentication repository (`login`, `register`, `refreshToken`, `logout`, `checkSession`, `hasActiveSession`) with Moshi error handling.
+* `ProPassApplication.kt` — Application entrypoint initializing `TokenStorage`, registering `DataStoreTokenProvider` with `NetworkClient`, and exposing repository dependencies.
 
 ### Backend Sources (`backend/`):
 * `src/server.ts` — Fastify server startup entrypoint.
@@ -366,6 +371,10 @@ From [`gradle/libs.versions.toml`](file:///home/divy/AndroidProjects/ProPass/gra
 * `app/src/test/java/com/mpc/propass/network/AuthInterceptorTest.kt` — Tests for Bearer token injection, Accept headers, and explicit header preservation.
 * `app/src/test/java/com/mpc/propass/network/ApiResponseParsingTest.kt` — Tests for Moshi serialization and deserialization of standard Fastify envelopes and error models.
 * `app/src/test/java/com/mpc/propass/network/NetworkClientIntegrationTest.kt` — MockWebServer end-to-end integration tests for Retrofit + OkHttp + Moshi.
+* `app/src/test/java/com/mpc/propass/data/local/TokenStorageTest.kt` — Unit tests for DataStore token persistence and in-memory cache operations.
+* `app/src/test/java/com/mpc/propass/data/local/FakeTokenStorage.kt` — In-memory test double for `TokenStorage`.
+* `app/src/test/java/com/mpc/propass/network/interceptor/DataStoreTokenProviderTest.kt` — Unit tests for non-blocking token provider delegation.
+* `app/src/test/java/com/mpc/propass/data/repository/AuthRepositoryTest.kt` — MockWebServer unit tests for login, register, token refresh, logout, and session restoration.
 * `backend/tests/health.test.ts` — Backend Fastify health check test suite (2 tests passed).
 * `backend/tests/auth.test.ts` — Backend authentication test suite (14 tests passed).
 * `backend/tests/user.test.ts` — Backend user profile & dashboard test suite (8 tests passed).
@@ -423,8 +432,8 @@ npm run dev
 
 ## 15. Known Limitations (Current Phase)
 
-1. **Android Networking Foundation (Phase 3A):** Retrofit 2, OkHttp 4, Moshi, centralized base URL config, and auth interceptors are initialized. Token persistence via DataStore and refresh token management belong to Phase 3B.
-2. **Android Network Integration:** Android UI screens currently run on local/mock data until Phase 3/4 integration.
+1. **Android Authentication & Token Persistence (Phase 3B):** Jetpack Preferences DataStore token persistence (`DataStoreTokenStorage`), non-blocking `DataStoreTokenProvider`, `AuthRepository`, session restoration in `SplashActivity`, and real login in `LoginActivity` are completed. User profile, dashboard, events, registration, and digital pass UI screens remain on local/mock data until Phase 3C/3D/3E.
+2. **Android Network Integration:** User profile, dashboard, events, registration, and digital pass UI screens currently run on local/mock data until Phase 3C/3D/3E/4 integration.
 3. **Mock Actions:** External wallet export, social sharing, and contact buttons on Android generate UI Toast feedback.
 
 ---
@@ -433,8 +442,8 @@ npm run dev
 
 All listed features have been executed and verified on physical hardware & development environment:
 
-* [x] **Android Gradle Build:** `./gradlew assembleDebug` builds with 0 errors.
-* [x] **Android Unit Tests:** 15/15 unit tests passing across 6 test suites (`./gradlew testDebugUnitTest`).
+* [x] **Android Gradle Build:** `./gradlew assembleDebug` builds with 0 errors (`BUILD SUCCESSFUL`).
+* [x] **Android Unit Tests:** 29/29 unit tests passing across 9 test suites (`./gradlew testDebugUnitTest`).
 * [x] **Android Physical Device Features:** Live CameraX viewfinder, physical torch, ML Kit QR detection, local QR validation, Smart Form validation, Review & Success flows verified on device `KVAMAAXSPNOV7PXC`.
 * [x] **Backend Foundation (Phase 1):**
   * Node.js v22 + TypeScript + Fastify + Prisma initialized.
@@ -465,6 +474,17 @@ All listed features have been executed and verified on physical hardware & devel
   * `TokenProvider` abstraction and `AuthInterceptor` for Bearer token injection.
   * `ProPassApiService` mapping Fastify endpoints.
   * MockWebServer integration tests verifying JSON deserialization and header injection.
+* [x] **Android Token Storage & Authentication Integration (Phase 3B):**
+  * `androidx.datastore:datastore-preferences:1.1.1` and `lifecycle-runtime-ktx:2.8.4` integrated.
+  * Typed Moshi auth models: `LoginRequest`, `RegisterRequest`, `RefreshTokenRequest`, `AuthUserDto`, `AuthTokensDto`, `AuthResponseData`, `RefreshResponseData`, `MeResponseData`.
+  * `DataStoreTokenStorage` provides persistent token storage with in-memory volatile cache for non-blocking synchronous reads needed by OkHttp's `AuthInterceptor`.
+  * `DataStoreTokenProvider` implements `TokenProvider` delegating to `TokenStorage`.
+  * `AuthRepository` (`AuthRepositoryImpl`) implements login, register, token refresh, logout (with unconditional local storage cleanup), `checkSession()`, and `hasActiveSession()` with Moshi error extraction.
+  * Custom `ProPassApplication` class initializes storage, registers provider with `NetworkClient`, and provides repository singleton.
+  * `LoginActivity` wired to real backend login with loading state on login button, error state display, and navigation to `HomeDashboardActivity`.
+  * `SplashActivity` checks session via `AuthRepository.hasActiveSession()` and routes to `HomeDashboardActivity` if authenticated, or `LoginActivity` if not.
+  * 29/29 unit tests passing across 9 test suites (`./gradlew testDebugUnitTest`).
+  * Full Android debug build clean: `./gradlew assembleDebug` (`BUILD SUCCESSFUL`).
 
 ---
 
@@ -477,7 +497,7 @@ All listed features have been executed and verified on physical hardware & devel
 * [x] **Phase 2D: Registration API** (Completed)
 * [x] **Phase 2E: Digital Pass API** (Completed)
 * [x] **Phase 3A: Android Networking Foundation** (Completed)
-* [ ] **Phase 3B: Token Storage & Authentication Integration** (DataStore, AuthRepository, SessionManager)
+* [x] **Phase 3B: Token Storage & Authentication Integration** (Completed)
 * [ ] **Phase 3C: User & Dashboard Integration**
 * [ ] **Phase 3D: Event & QR Scanning Integration**
 * [ ] **Phase 3E: Registration & Digital Pass Integration**
@@ -488,7 +508,7 @@ All listed features have been executed and verified on physical hardware & devel
 
 ## 18. Current Stopping Point
 
-> **Phase 3A Complete:** Android Networking Foundation established with Retrofit 2, OkHttp 4, Moshi, centralized base URL config, auth interceptor, and comprehensive MockWebServer unit tests. Android build clean (0 errors, 15/15 unit tests passing). Ready for Phase 3B upon user approval.  
+> **Phase 3B Complete:** Token storage & authentication integration established with Jetpack Preferences DataStore, in-memory caching for non-blocking OkHttp interceptor reads, typed Moshi auth DTOs, full `AuthRepository`, `ProPassApplication`, session restoration routing in `SplashActivity`, and real login integration in `LoginActivity`. Android build clean (0 errors, 29/29 unit tests passing across 9 suites). Ready for Phase 3C upon user approval.  
 > *Updated on: September 4, 2026*
 
 

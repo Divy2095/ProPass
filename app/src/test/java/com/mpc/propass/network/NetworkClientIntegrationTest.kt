@@ -71,6 +71,7 @@ class NetworkClientIntegrationTest {
                 "success": true,
                 "data": {
                     "user": {
+                        "id": "alex-id",
                         "email": "alex.morgan@example.com"
                     }
                 },

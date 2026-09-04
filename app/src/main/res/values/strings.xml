@@ -18,6 +18,8 @@
     <string name="error_empty_email">Please enter your email address</string>
     <string name="error_invalid_email">Please enter a valid email address</string>
     <string name="error_empty_password">Please enter your password</string>
+    <string name="login_success_toast">Welcome back!</string>
+    <string name="error_login_failed">Login failed. Please check your credentials.</string>
     <string name="cd_google_logo">Google logo</string>
 
     <!-- Onboarding Smart Scan Strings -->

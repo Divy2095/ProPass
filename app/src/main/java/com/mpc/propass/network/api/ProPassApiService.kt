@@ -36,26 +36,26 @@ interface ProPassApiService {
 
     @POST("api/v1/auth/register")
     suspend fun register(
-        @Body request: Map<String, @JvmSuppressWildcards Any>
-    ): Response<ApiResponse<Map<String, Any?>>>
+        @Body request: com.mpc.propass.network.model.RegisterRequest
+    ): Response<ApiResponse<com.mpc.propass.network.model.AuthResponseData>>
 
     @POST("api/v1/auth/login")
     suspend fun login(
-        @Body request: Map<String, @JvmSuppressWildcards Any>
-    ): Response<ApiResponse<Map<String, Any?>>>
+        @Body request: com.mpc.propass.network.model.LoginRequest
+    ): Response<ApiResponse<com.mpc.propass.network.model.AuthResponseData>>
 
     @POST("api/v1/auth/refresh")
     suspend fun refreshToken(
-        @Body request: Map<String, @JvmSuppressWildcards Any>
-    ): Response<ApiResponse<Map<String, Any?>>>
+        @Body request: com.mpc.propass.network.model.RefreshTokenRequest
+    ): Response<ApiResponse<com.mpc.propass.network.model.RefreshResponseData>>
 
     @POST("api/v1/auth/logout")
     suspend fun logout(
-        @Body request: Map<String, @JvmSuppressWildcards Any> = emptyMap()
+        @Body request: com.mpc.propass.network.model.RefreshTokenRequest
     ): Response<ApiResponse<Map<String, Any?>>>
 
     @GET("api/v1/auth/me")
-    suspend fun getCurrentUser(): Response<ApiResponse<Map<String, Any?>>>
+    suspend fun getCurrentUser(): Response<ApiResponse<com.mpc.propass.network.model.MeResponseData>>
 
     // ==========================================
     // User Profile & Dashboard (Phase 2B)

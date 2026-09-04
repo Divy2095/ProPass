@@ -26,9 +26,14 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.widget.doAfterTextChanged
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
+import com.mpc.propass.data.local.DataStoreTokenStorage
+import com.mpc.propass.data.repository.AuthRepository
+import com.mpc.propass.data.repository.AuthRepositoryImpl
+import kotlinx.coroutines.launch
 
 /**
  * Login Screen implementation for ProPass Digital Identity System.
@@ -42,6 +47,11 @@ import com.google.android.material.textfield.TextInputLayout
  * - Form validation with shake animation
  */
 class LoginActivity : AppCompatActivity() {
+
+    private val authRepository: AuthRepository by lazy {
+        (application as? ProPassApplication)?.authRepository
+            ?: AuthRepositoryImpl(tokenStorage = DataStoreTokenStorage.create(this))
+    }
 
     private lateinit var loginScrollView: View
     private lateinit var loginRootContainer: View
@@ -198,20 +208,33 @@ class LoginActivity : AppCompatActivity() {
 
         if (!isValid) return
 
-        // Simulate login state and transition to Onboarding
+        // Submit credentials to backend API
         isSubmitting = true
         btnLogin.isEnabled = false
         btnLogin.text = getString(R.string.login_logging_in)
         btnLogin.alpha = 0.8f
 
-        handler.postDelayed({
-            isSubmitting = false
-            btnLogin.isEnabled = true
-            btnLogin.text = getString(R.string.login_btn_text)
-            btnLogin.alpha = 1.0f
-            val intent = Intent(this, OnboardingProfileCreationActivity::class.java)
-            startActivity(intent)
-        }, 1000)
+        lifecycleScope.launch {
+            val result = authRepository.login(email, password)
+            if (!isFinishing && !isDestroyed) {
+                isSubmitting = false
+                btnLogin.isEnabled = true
+                btnLogin.text = getString(R.string.login_btn_text)
+                btnLogin.alpha = 1.0f
+
+                result.onSuccess {
+                    Toast.makeText(this@LoginActivity, getString(R.string.login_success_toast), Toast.LENGTH_SHORT).show()
+                    val intent = Intent(this@LoginActivity, OnboardingProfileCreationActivity::class.java)
+                    startActivity(intent)
+                    finish()
+                }.onFailure { exception ->
+                    val errorMsg = exception.message ?: getString(R.string.error_login_failed)
+                    tilPassword.error = errorMsg
+                    shakeView(tilPassword)
+                    Toast.makeText(this@LoginActivity, errorMsg, Toast.LENGTH_LONG).show()
+                }
+            }
+        }
     }
 
     /**

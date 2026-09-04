@@ -201,12 +201,19 @@ class SplashActivity : AppCompatActivity() {
     }
 
     /**
-     * Automatically transitions from Splash to Login after the entrance animations complete (~2500ms).
+     * Automatically transitions from Splash to Home or Login after entrance animations complete (~2500ms).
+     * Restores existing session if valid tokens are present in DataStore.
      */
     private fun scheduleNavigationToLogin() {
         handler.postDelayed({
             if (!isFinishing && !isDestroyed) {
-                val intent = Intent(this, LoginActivity::class.java)
+                val authRepository = (application as? ProPassApplication)?.authRepository
+                val targetActivity = if (authRepository?.hasActiveSession() == true) {
+                    HomeDashboardActivity::class.java
+                } else {
+                    LoginActivity::class.java
+                }
+                val intent = Intent(this, targetActivity)
                 startActivity(intent)
                 finish()
             }
