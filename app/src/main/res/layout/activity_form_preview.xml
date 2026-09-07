@@ -269,7 +269,8 @@
                                 android:layout_height="wrap_content"
                                 android:fontFamily="@font/inter_semibold"
                                 android:includeFontPadding="false"
-                                android:text="Alex Morgan"
+                                android:text="Verified Attendee"
+                                tools:text="Alex Morgan"
                                 android:textColor="@color/on_surface"
                                 android:textSize="14sp" />
                         </LinearLayout>
@@ -313,7 +314,8 @@
                                 android:layout_height="wrap_content"
                                 android:fontFamily="@font/inter_semibold"
                                 android:includeFontPadding="false"
-                                android:text="alex.morgan@example.com"
+                                android:text="attendee@example.com"
+                                tools:text="alex.morgan@example.com"
                                 android:textColor="@color/on_surface"
                                 android:textSize="14sp" />
                         </LinearLayout>
@@ -338,6 +340,14 @@
                         android:visibility="gone"
                         tools:visibility="visible">
 
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_marginEnd="12dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_call"
+                            app:tint="@color/primary" />
+
                         <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
@@ -360,7 +370,8 @@
                                 android:layout_height="wrap_content"
                                 android:fontFamily="@font/inter_semibold"
                                 android:includeFontPadding="false"
-                                android:text="+1 (555) 012-3456"
+                                android:text="+1 (555) 000-0000"
+                                tools:text="+1 (555) 012-3456"
                                 android:textColor="@color/on_surface"
                                 android:textSize="14sp" />
                         </LinearLayout>

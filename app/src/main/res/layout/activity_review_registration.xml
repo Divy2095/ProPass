@@ -60,10 +60,10 @@
                     android:includeFontPadding="false"
                     android:letterSpacing="-0.02"
                     android:lineHeight="36sp"
-                    android:text="TechConf 2024"
                     android:textColor="@color/on_surface"
                     android:textSize="28sp"
-                    tools:targetApi="p" />
+                    tools:targetApi="p"
+                    tools:text="TechConf 2024" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -151,9 +151,9 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
                             android:fontFamily="@font/inter_semibold"
-                            android:text="Alex Morgan"
                             android:textColor="@color/on_surface"
-                            android:textSize="15sp" />
+                            android:textSize="15sp"
+                            tools:text="Alex Morgan" />
                     </LinearLayout>
 
                     <!-- Divider -->
@@ -184,9 +184,9 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
                             android:fontFamily="@font/inter_semibold"
-                            android:text="alex.morgan@example.com"
                             android:textColor="@color/on_surface"
-                            android:textSize="15sp" />
+                            android:textSize="15sp"
+                            tools:text="alex.morgan@example.com" />
                     </LinearLayout>
 
                     <!-- Divider -->
@@ -216,9 +216,9 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
                             android:fontFamily="@font/inter_semibold"
-                            android:text="University of Technology"
                             android:textColor="@color/on_surface"
-                            android:textSize="15sp" />
+                            android:textSize="15sp"
+                            tools:text="University of Technology" />
                     </LinearLayout>
 
                 </LinearLayout>
@@ -275,9 +275,9 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
                             android:fontFamily="@font/inter_semibold"
-                            android:text="General Attendee"
                             android:textColor="@color/on_surface"
-                            android:textSize="15sp" />
+                            android:textSize="15sp"
+                            tools:text="General Attendee" />
                     </LinearLayout>
 
                     <!-- Divider -->
@@ -308,9 +308,9 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
                             android:fontFamily="@font/inter_semibold"
-                            android:text="3 days"
                             android:textColor="@color/on_surface"
-                            android:textSize="15sp" />
+                            android:textSize="15sp"
+                            tools:text="3 days" />
                     </LinearLayout>
 
                     <!-- Divider -->
@@ -340,9 +340,9 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
                             android:fontFamily="@font/inter_semibold"
-                            android:text="MH12AB1234"
                             android:textColor="@color/on_surface"
-                            android:textSize="15sp" />
+                            android:textSize="15sp"
+                            tools:text="MH12AB1234" />
                     </LinearLayout>
 
                 </LinearLayout>

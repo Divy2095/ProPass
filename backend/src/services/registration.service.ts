@@ -183,6 +183,68 @@ export class RegistrationService {
         });
       }
 
+      // Issue or update attendee Digital Pass upon confirmed registration
+      let tier = 'STANDARD';
+      if (input.purpose === 'SPEAKER') {
+        tier = 'VIP';
+      } else if (input.purpose === 'SPONSOR_EXHIBITOR') {
+        tier = 'ALL-ACCESS';
+      } else {
+        tier = 'PREMIUM';
+      }
+
+      const existingPass = await tx.digitalPass.findUnique({
+        where: { userId },
+      });
+
+      if (!existingPass) {
+        const currentYear = new Date().getFullYear();
+        let passNumber = '';
+        let passUnique = false;
+        while (!passUnique) {
+          const randomNum = Math.floor(1000 + Math.random() * 9000);
+          passNumber = `PP-${currentYear}-${randomNum}`;
+          const clash = await tx.digitalPass.findUnique({ where: { passNumber } });
+          if (!clash) passUnique = true;
+        }
+
+        const qrPayload = `propass:pass:${passNumber}`;
+
+        await tx.digitalPass.create({
+          data: {
+            userId,
+            passNumber,
+            qrPayload,
+            tier,
+            isActive: true,
+            expiresAt: event.endDate ? new Date(event.endDate) : null,
+          },
+        });
+      } else {
+        await tx.digitalPass.update({
+          where: { userId },
+          data: {
+            isActive: true,
+            tier: existingPass.tier || tier,
+            expiresAt: event.endDate ? new Date(event.endDate) : existingPass.expiresAt,
+          },
+        });
+      }
+
+      // Sync attendee profile with registered name and institution
+      await tx.profile.upsert({
+        where: { userId },
+        update: {
+          fullName: input.fullName,
+          organization: input.institution,
+        },
+        create: {
+          userId,
+          fullName: input.fullName,
+          organization: input.institution,
+        },
+      });
+
       const completeRegistration = await tx.registration.findUnique({
         where: { id: registration.id },
         include: {

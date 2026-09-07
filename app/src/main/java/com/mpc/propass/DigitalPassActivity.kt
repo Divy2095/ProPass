@@ -73,6 +73,10 @@ class DigitalPassActivity : AppCompatActivity() {
     private lateinit var tvPassErrorMessage: TextView
     private lateinit var btnPassRetry: MaterialButton
 
+    private lateinit var layoutNoPassEmpty: LinearLayout
+    private lateinit var btnNoPassRetry: MaterialButton
+    private lateinit var btnNoPassScan: MaterialButton
+
     private lateinit var btnContactMail: FrameLayout
     private lateinit var btnContactCall: FrameLayout
     private lateinit var btnContactSocial: FrameLayout
@@ -95,7 +99,6 @@ class DigitalPassActivity : AppCompatActivity() {
 
         initViews()
         applyWindowInsets()
-        startCardEntranceAnimation()
         setupInteractions()
         loadPassData()
     }
@@ -128,6 +131,10 @@ class DigitalPassActivity : AppCompatActivity() {
         layoutPassError = findViewById(R.id.layoutPassError)
         tvPassErrorMessage = findViewById(R.id.tvPassErrorMessage)
         btnPassRetry = findViewById(R.id.btnPassRetry)
+
+        layoutNoPassEmpty = findViewById(R.id.layoutNoPassEmpty)
+        btnNoPassRetry = findViewById(R.id.btnNoPassRetry)
+        btnNoPassScan = findViewById(R.id.btnNoPassScan)
 
         btnContactMail = findViewById(R.id.btnContactMail)
         btnContactCall = findViewById(R.id.btnContactCall)
@@ -223,9 +230,16 @@ class DigitalPassActivity : AppCompatActivity() {
 
         cardPass.setOnTouchListener(touchListener98)
 
-        // Retry button
+        // Retry buttons
         btnPassRetry.setOnClickListener {
             loadPassData()
+        }
+        btnNoPassRetry.setOnClickListener {
+            loadPassData()
+        }
+        btnNoPassScan.setOnClickListener {
+            val intent = android.content.Intent(this, ScanQRActivity::class.java)
+            startActivity(intent)
         }
 
         // Contact Methods
@@ -297,11 +311,13 @@ class DigitalPassActivity : AppCompatActivity() {
 
         btnSaveImage.setOnTouchListener(touchListener98)
         btnSaveImage.setOnClickListener {
+            if (currentPassData == null) return@setOnClickListener
             Toast.makeText(this, "Digital Pass saved to Gallery", Toast.LENGTH_SHORT).show()
         }
 
         btnToWallet.setOnTouchListener(touchListener98)
         btnToWallet.setOnClickListener {
+            if (currentPassData == null) return@setOnClickListener
             Toast.makeText(this, "Pass added to Google Wallet", Toast.LENGTH_SHORT).show()
         }
 
@@ -338,27 +354,55 @@ class DigitalPassActivity : AppCompatActivity() {
         loadPassData()
     }
 
-    private fun loadPassData() {
+    private fun showLoading() {
         passProgressBar.visibility = View.VISIBLE
+        passScrollView.visibility = View.GONE
         layoutPassError.visibility = View.GONE
+        layoutNoPassEmpty.visibility = View.GONE
+    }
+
+    private fun showPassContent(data: MyPassResponseData) {
+        passProgressBar.visibility = View.GONE
+        layoutPassError.visibility = View.GONE
+        layoutNoPassEmpty.visibility = View.GONE
+        passScrollView.visibility = View.VISIBLE
+        cardPass.visibility = View.VISIBLE
+        currentPassData = data
+        bindPassData(data)
+        startCardEntranceAnimation()
+    }
+
+    private fun showNoPassEmpty() {
+        currentPassData = null
+        passProgressBar.visibility = View.GONE
+        passScrollView.visibility = View.GONE
+        layoutPassError.visibility = View.GONE
+        layoutNoPassEmpty.visibility = View.VISIBLE
+    }
+
+    private fun showError(message: String) {
+        currentPassData = null
+        passProgressBar.visibility = View.GONE
+        passScrollView.visibility = View.GONE
+        layoutNoPassEmpty.visibility = View.GONE
+        layoutPassError.visibility = View.VISIBLE
+        tvPassErrorMessage.text = message
+    }
+
+    private fun loadPassData() {
+        showLoading()
 
         lifecycleScope.launch {
             val result = digitalPassRepository.getMyDigitalPass()
-            passProgressBar.visibility = View.GONE
 
             result.onSuccess { data ->
-                layoutPassError.visibility = View.GONE
-                cardPass.visibility = View.VISIBLE
-                currentPassData = data
-                bindPassData(data)
+                showPassContent(data)
             }.onFailure { error ->
-                layoutPassError.visibility = View.VISIBLE
-                val message = when (error) {
-                    is NoActivePassException -> getString(R.string.error_no_active_pass)
-                    is PassAuthException -> getString(R.string.error_auth_required)
-                    else -> error.message ?: getString(R.string.error_pass_load_failed)
+                when (error) {
+                    is NoActivePassException -> showNoPassEmpty()
+                    is PassAuthException -> showError(getString(R.string.error_auth_required))
+                    else -> showError(error.message ?: getString(R.string.error_pass_load_failed))
                 }
-                tvPassErrorMessage.text = message
             }
         }
     }

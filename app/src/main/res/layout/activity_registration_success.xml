@@ -104,9 +104,9 @@
                         android:fontFamily="@font/inter_bold"
                         android:gravity="center"
                         android:includeFontPadding="false"
-                        android:text="TechConf 2024"
                         android:textColor="@color/primary"
-                        android:textSize="22sp" />
+                        android:textSize="22sp"
+                        tools:text="TechConf 2024" />
 
                     <TextView
                         android:id="@+id/tvSuccessAttendeeName"
@@ -116,9 +116,9 @@
                         android:fontFamily="@font/inter_medium"
                         android:gravity="center"
                         android:includeFontPadding="false"
-                        android:text="Alex Morgan • General Attendee"
                         android:textColor="@color/on_surface"
-                        android:textSize="14sp" />
+                        android:textSize="14sp"
+                        tools:text="Alex Morgan • General Attendee" />
 
                 </LinearLayout>
 

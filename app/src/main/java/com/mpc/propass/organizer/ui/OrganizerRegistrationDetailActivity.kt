@@ -86,6 +86,7 @@ class OrganizerRegistrationDetailActivity : AppCompatActivity() {
 
         resolveIntentData()
         initViews()
+        applyWindowInsets()
         setupListeners()
 
         if (initialRegistration != null) {
@@ -110,8 +111,10 @@ class OrganizerRegistrationDetailActivity : AppCompatActivity() {
         window.statusBarColor = Color.TRANSPARENT
         val controller = WindowCompat.getInsetsController(window, window.decorView)
         controller.isAppearanceLightStatusBars = true
+    }
 
-        val root = findViewById<View>(R.id.registrationDetailRoot)
+    private fun applyWindowInsets() {
+        val root = findViewById<View>(R.id.registrationDetailRoot) ?: return
         ViewCompat.setOnApplyWindowInsetsListener(root) { view, insets ->
             val statusBars = insets.getInsets(WindowInsetsCompat.Type.statusBars())
             val navBars = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
@@ -124,10 +127,14 @@ class OrganizerRegistrationDetailActivity : AppCompatActivity() {
     @Suppress("DEPRECATION")
     private fun resolveIntentData() {
         registrationId = intent.getStringExtra(EXTRA_REGISTRATION_ID) ?: ""
-        initialRegistration = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            intent.getSerializableExtra(EXTRA_REGISTRATION, OrganizerRegistrationDto::class.java)
-        } else {
-            intent.getSerializableExtra(EXTRA_REGISTRATION) as? OrganizerRegistrationDto
+        initialRegistration = try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                intent.getSerializableExtra(EXTRA_REGISTRATION, OrganizerRegistrationDto::class.java)
+            } else {
+                intent.getSerializableExtra(EXTRA_REGISTRATION) as? OrganizerRegistrationDto
+            }
+        } catch (_: Exception) {
+            null
         }
 
         if (registrationId.isBlank() && initialRegistration != null) {

@@ -88,6 +88,26 @@
                     android:textSize="22sp"
                     tools:text="Alex Morgan" />
 
+                <!-- Role Badge (Organizer role indicator) -->
+                <TextView
+                    android:id="@+id/tvProfileRoleBadge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:layout_marginBottom="6dp"
+                    android:background="@drawable/bg_org_pill"
+                    android:fontFamily="@font/inter_semibold"
+                    android:includeFontPadding="false"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:paddingTop="3dp"
+                    android:paddingBottom="3dp"
+                    android:text="@string/profile_role_organizer"
+                    android:textColor="@color/primary"
+                    android:textSize="11sp"
+                    android:visibility="gone"
+                    tools:visibility="visible" />
+
                 <!-- Professional Headline (Title · Org) -->
                 <TextView
                     android:id="@+id/tvProfileHeadline"
@@ -432,11 +452,13 @@
                     android:insetBottom="0dp"
                     android:text="@string/organizer_switch_to_organizer"
                     android:textColor="@color/primary"
+                    android:visibility="gone"
                     app:cornerRadius="12dp"
                     app:icon="@drawable/ic_business"
                     app:iconGravity="textStart"
                     app:iconPadding="8dp"
-                    app:iconTint="@color/primary" />
+                    app:iconTint="@color/primary"
+                    tools:visibility="visible" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnLogout"

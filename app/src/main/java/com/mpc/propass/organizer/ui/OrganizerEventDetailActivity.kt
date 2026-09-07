@@ -62,6 +62,7 @@ class OrganizerEventDetailActivity : AppCompatActivity() {
 
         resolveIntentData()
         initViews()
+        applyWindowInsets()
         bindEventData()
         setupListeners()
     }
@@ -73,26 +74,39 @@ class OrganizerEventDetailActivity : AppCompatActivity() {
 
     private fun setupEdgeToEdge() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        window.statusBarColor = Color.TRANSPARENT
         val controller = WindowCompat.getInsetsController(window, window.decorView)
         controller.isAppearanceLightStatusBars = true
+        controller.isAppearanceLightNavigationBars = true
+    }
 
+    private fun applyWindowInsets() {
         val root = findViewById<View>(R.id.eventDetailRoot)
-        ViewCompat.setOnApplyWindowInsetsListener(root) { view, insets ->
-            val statusBars = insets.getInsets(WindowInsetsCompat.Type.statusBars())
-            val navBars = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
-            findViewById<View>(R.id.appBarLayout)?.setPadding(0, statusBars.top, 0, 0)
-            view.setPadding(0, 0, 0, navBars.bottom)
-            insets
+        root?.let {
+            ViewCompat.setOnApplyWindowInsetsListener(it) { view, insets ->
+                val statusBars = insets.getInsets(WindowInsetsCompat.Type.statusBars())
+                val navBars = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
+                findViewById<View>(R.id.appBarLayout)?.setPadding(0, statusBars.top, 0, 0)
+                view.setPadding(0, 0, 0, navBars.bottom)
+                insets
+            }
         }
     }
 
     @Suppress("DEPRECATION")
     private fun resolveIntentData() {
-        event = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            intent.getSerializableExtra(EXTRA_EVENT, OrganizerEvent::class.java)
-        } else {
-            intent.getSerializableExtra(EXTRA_EVENT) as? OrganizerEvent
+        event = try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                intent.getSerializableExtra(EXTRA_EVENT, OrganizerEvent::class.java)
+            } else {
+                intent.getSerializableExtra(EXTRA_EVENT) as? OrganizerEvent
+            }
+        } catch (_: Exception) {
+            null
+        }
+
+        val eventId = intent.getStringExtra(EXTRA_EVENT_ID) ?: event?.id ?: ""
+        if (event == null && eventId.isNotBlank()) {
+            event = com.mpc.propass.organizer.data.OrganizerEventStore.getEventById(eventId)
         }
     }
 
@@ -115,10 +129,10 @@ class OrganizerEventDetailActivity : AppCompatActivity() {
     private fun bindEventData() {
         val current = event ?: return
 
-        tvTopBarTitle.text = current.name
-        tvEventTitle.text = current.name
-        tvEventStatusBadge.text = current.status
-        tvEventSlug.text = current.slug
+        tvTopBarTitle.text = current.name.ifBlank { "Event Details" }
+        tvEventTitle.text = current.name.ifBlank { "Untitled Event" }
+        tvEventStatusBadge.text = current.status.ifBlank { "PUBLISHED" }
+        tvEventSlug.text = current.slug.ifBlank { current.id }
 
         if (current.description.isNotBlank()) {
             tvEventDescription.visibility = View.VISIBLE
@@ -127,16 +141,19 @@ class OrganizerEventDetailActivity : AppCompatActivity() {
             tvEventDescription.visibility = View.GONE
         }
 
-        tvEventDateTime.text = if (current.startTime.isNotBlank() && current.endTime.isNotBlank()) {
-            "${current.date} • ${current.startTime} - ${current.endTime}"
-        } else {
-            current.date.ifBlank { "Date not specified" }
+        val hasStart = current.startTime.isNotBlank()
+        val hasEnd = current.endTime.isNotBlank()
+        tvEventDateTime.text = when {
+            hasStart && hasEnd -> "${current.date.ifBlank { "Event Date" }} • ${current.startTime} - ${current.endTime}"
+            hasStart -> "${current.date.ifBlank { "Event Date" }} • ${current.startTime}"
+            current.date.isNotBlank() -> current.date
+            else -> "Date not specified"
         }
 
         tvEventLocation.text = current.location.ifBlank { "Location not specified" }
-        tvEventDuration.text = "Valid for ${current.maxDurationDays} day(s) access"
+        tvEventDuration.text = "Valid for ${current.maxDurationDays.coerceAtLeast(1)} day(s) access"
 
-        val count = current.attendeeCount
+        val count = current.attendeeCount.coerceAtLeast(0)
         tvRegistrationCountBadge.text = "$count Registered"
     }
 
@@ -160,10 +177,14 @@ class OrganizerEventDetailActivity : AppCompatActivity() {
         }
 
         btnViewRegistrations.setOnClickListener {
-            val current = event ?: return@setOnClickListener
+            val resolvedId = event?.id ?: intent.getStringExtra(EXTRA_EVENT_ID) ?: ""
+            if (resolvedId.isBlank()) {
+                Toast.makeText(this, "Event ID unavailable", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
             val intent = Intent(this, OrganizerRegistrationsActivity::class.java).apply {
-                putExtra(OrganizerRegistrationsActivity.EXTRA_EVENT_ID, current.id)
-                putExtra(OrganizerRegistrationsActivity.EXTRA_EVENT_TITLE, current.name)
+                putExtra(OrganizerRegistrationsActivity.EXTRA_EVENT_ID, resolvedId)
+                putExtra(OrganizerRegistrationsActivity.EXTRA_EVENT_TITLE, event?.name ?: "")
             }
             startActivity(intent)
         }

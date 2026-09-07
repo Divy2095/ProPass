@@ -47,6 +47,7 @@ class ProfileActivity : AppCompatActivity() {
     private lateinit var avatarContainer: FrameLayout
     private lateinit var badgeVerified: ImageView
     private lateinit var tvProfileFullName: TextView
+    private lateinit var tvProfileRoleBadge: TextView
     private lateinit var tvProfileHeadline: TextView
     private lateinit var tvProfileEmail: TextView
 
@@ -122,6 +123,7 @@ class ProfileActivity : AppCompatActivity() {
         avatarContainer = findViewById(R.id.avatarContainer)
         badgeVerified = findViewById(R.id.badgeVerified)
         tvProfileFullName = findViewById(R.id.tvProfileFullName)
+        tvProfileRoleBadge = findViewById(R.id.tvProfileRoleBadge)
         tvProfileHeadline = findViewById(R.id.tvProfileHeadline)
         tvProfileEmail = findViewById(R.id.tvProfileEmail)
 
@@ -145,6 +147,11 @@ class ProfileActivity : AppCompatActivity() {
         btnEditProfile = findViewById(R.id.btnEditProfile)
         btnOrganizerPortal = findViewById(R.id.btnOrganizerPortal)
         btnLogout = findViewById(R.id.btnLogout)
+
+        // Role-based visibility
+        val initialIsOrganizer = authRepository.isOrganizer()
+        tvProfileRoleBadge.visibility = if (initialIsOrganizer) View.VISIBLE else View.GONE
+        btnOrganizerPortal.visibility = if (initialIsOrganizer) View.VISIBLE else View.GONE
 
         // Bottom Navigation
         tabHome = findViewById(R.id.tabHome)
@@ -290,6 +297,10 @@ class ProfileActivity : AppCompatActivity() {
 
         tvProfileFullName.text = fullName
         tvProfileEmail.text = user.email
+
+        val isOrganizer = user.isOrganizer || authRepository.isOrganizer()
+        tvProfileRoleBadge.visibility = if (isOrganizer) View.VISIBLE else View.GONE
+        btnOrganizerPortal.visibility = if (isOrganizer) View.VISIBLE else View.GONE
 
         val title = profile?.title?.takeIf { it.isNotBlank() }
         val org = profile?.organization?.takeIf { it.isNotBlank() }

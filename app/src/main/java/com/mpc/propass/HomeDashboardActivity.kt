@@ -76,6 +76,7 @@ class HomeDashboardActivity : AppCompatActivity() {
     private lateinit var tvProgressPercent: TextView
 
     // Organizer Portal card
+    private lateinit var containerOrganizerPortal: FrameLayout
     private lateinit var cardOrganizerPortal: MaterialCardView
 
     // Recent Activity items
@@ -153,7 +154,9 @@ class HomeDashboardActivity : AppCompatActivity() {
         tvProgressPercent = findViewById(R.id.tvProgressPercent)
 
         // Organizer Portal
+        containerOrganizerPortal = findViewById(R.id.containerOrganizerPortal)
         cardOrganizerPortal = findViewById(R.id.cardOrganizerPortal)
+        containerOrganizerPortal.visibility = if (authRepository.isOrganizer()) View.VISIBLE else View.GONE
 
         // Recent Activity
         itemActivity1 = findViewById(R.id.itemActivity1)
@@ -298,6 +301,10 @@ class HomeDashboardActivity : AppCompatActivity() {
                 itemActivity2.visibility = View.GONE
             }
         }
+
+        // 5. Organizer Portal visibility
+        val isOrganizer = data.user.isOrganizer || authRepository.isOrganizer()
+        containerOrganizerPortal.visibility = if (isOrganizer) View.VISIBLE else View.GONE
     }
 
     private fun formatActivitySubtitle(purpose: String?, location: String?): String {

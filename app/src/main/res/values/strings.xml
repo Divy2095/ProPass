@@ -204,6 +204,11 @@
     <string name="error_no_active_pass">No active digital pass found for this user account</string>
     <string name="error_pass_load_failed">Failed to load digital pass</string>
     <string name="error_auth_required">Authentication required. Please sign in again.</string>
+    <string name="no_active_pass_title">No Active Digital Pass</string>
+    <string name="no_active_pass_subtitle">You haven\'t registered for any events yet. Complete an event registration to receive your verified digital pass and access QR code.</string>
+    <string name="btn_check_again">Check Again</string>
+    <string name="btn_scan_event_qr">Scan Event QR</string>
+    <string name="profile_role_organizer">ORGANIZER</string>
 
     <!-- Phase 4 Organizer UI Strings -->
     <string name="organizer_portal_title">Organizer Portal</string>

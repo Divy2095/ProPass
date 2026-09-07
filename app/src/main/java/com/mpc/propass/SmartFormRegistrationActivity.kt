@@ -22,6 +22,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import android.os.Build
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.ViewCompat
@@ -34,8 +35,12 @@ import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.mpc.propass.data.repository.EventRepository
 import com.mpc.propass.data.repository.EventRepositoryImpl
+import com.mpc.propass.data.repository.UserRepository
+import com.mpc.propass.data.repository.UserRepositoryImpl
 import com.mpc.propass.network.model.EventDto
 import com.mpc.propass.network.model.FormQuestionDto
+import com.mpc.propass.network.model.UserProfileDto
+import com.mpc.propass.network.model.AuthUserDto
 import kotlinx.coroutines.launch
 
 /**
@@ -102,8 +107,19 @@ class SmartFormRegistrationActivity : AppCompatActivity() {
 
     private lateinit var btnReviewSubmit: MaterialButton
 
-    private var currentEventId: String = "techconf-2024"
-    private var currentEventName: String = "TechConf 2024"
+    private val userRepository: UserRepository by lazy {
+        (application as? ProPassApplication)?.userRepository ?: UserRepositoryImpl()
+    }
+
+    private val eventRepository: EventRepository by lazy {
+        (application as? ProPassApplication)?.eventRepository ?: EventRepositoryImpl()
+    }
+
+    private var cachedProfile: UserProfileDto? = null
+    private var cachedUser: AuthUserDto? = null
+
+    private var currentEventId: String = ""
+    private var currentEventName: String = ""
     private var maxDuration: Int = 5
 
     private val purposeOptions by lazy {
@@ -122,14 +138,23 @@ class SmartFormRegistrationActivity : AppCompatActivity() {
 
         initViews()
         applyWindowInsets()
-        setupEventHeader()
+        val eventDto = getEventDtoExtra()
+        setupEventHeader(eventDto)
         setupRowInteractions()
         setupPurposeDropdown()
         setupInputBehaviors()
         setupSubmitButton()
-        @Suppress("DEPRECATION")
-        val eventDto = intent.getSerializableExtra(EXTRA_EVENT_DTO) as? EventDto
+        loadUserProfile()
         loadEventForm(eventDto)
+    }
+
+    @Suppress("DEPRECATION")
+    private fun getEventDtoExtra(): EventDto? {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            intent.getSerializableExtra(EXTRA_EVENT_DTO, EventDto::class.java)
+        } else {
+            intent.getSerializableExtra(EXTRA_EVENT_DTO) as? EventDto
+        }
     }
 
     private fun setupEdgeToEdge() {
@@ -179,10 +204,8 @@ class SmartFormRegistrationActivity : AppCompatActivity() {
         btnReviewSubmit = findViewById(R.id.btnReviewSubmit)
     }
 
-    private fun setupEventHeader() {
-        @Suppress("DEPRECATION")
-        val eventDto = intent.getSerializableExtra(EXTRA_EVENT_DTO) as? EventDto
-        val eventId = intent.getStringExtra(EXTRA_EVENT_ID) ?: eventDto?.slug ?: eventDto?.id ?: "techconf-2024"
+    private fun setupEventHeader(eventDto: EventDto?) {
+        val eventId = intent.getStringExtra(EXTRA_EVENT_ID) ?: eventDto?.slug ?: eventDto?.id ?: ""
         val eventTitle = intent.getStringExtra(EXTRA_EVENT_TITLE) ?: eventDto?.title
         val eventOverline = intent.getStringExtra(EXTRA_EVENT_OVERLINE) ?: eventDto?.overline
         val eventSubtitle = intent.getStringExtra(EXTRA_EVENT_SUBTITLE) ?: eventDto?.subtitle
@@ -199,32 +222,84 @@ class SmartFormRegistrationActivity : AppCompatActivity() {
             return
         }
 
-        when (eventId.lowercase()) {
-            "techconf-2024" -> {
-                currentEventName = getString(R.string.event_title) // TechConf 2024
-                tvOverline.text = getString(R.string.event_registration_overline)
-                tvEventTitle.text = currentEventName
-                tvEventSubtitle.text = getString(R.string.event_subtitle)
-            }
-            "google-office-visit" -> {
-                currentEventName = "Google Office Visit"
-                tvOverline.text = "VISITOR PASS"
-                tvEventTitle.text = currentEventName
-                tvEventSubtitle.text = "Check in for your scheduled campus visit."
-            }
-            "android-conf-2026" -> {
-                currentEventName = "Android Conf 2026"
-                tvOverline.text = "CONFERENCE PASS"
-                tvEventTitle.text = currentEventName
-                tvEventSubtitle.text = "Secure your badge for Android developer sessions."
-            }
-            else -> {
-                currentEventName = eventId.split("-", "_").joinToString(" ") { segment ->
-                    segment.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+        if (eventId.isNotBlank()) {
+            when (eventId.lowercase()) {
+                "techconf-2024" -> {
+                    currentEventName = getString(R.string.event_title) // TechConf 2024
+                    tvOverline.text = getString(R.string.event_registration_overline)
+                    tvEventTitle.text = currentEventName
+                    tvEventSubtitle.text = getString(R.string.event_subtitle)
                 }
-                tvOverline.text = "EVENT REGISTRATION"
-                tvEventTitle.text = currentEventName
-                tvEventSubtitle.text = "Complete your registration to secure your spot."
+                "google-office-visit" -> {
+                    currentEventName = "Google Office Visit"
+                    tvOverline.text = "VISITOR PASS"
+                    tvEventTitle.text = currentEventName
+                    tvEventSubtitle.text = "Check in for your scheduled campus visit."
+                }
+                "android-conf-2026" -> {
+                    currentEventName = "Android Conf 2026"
+                    tvOverline.text = "CONFERENCE PASS"
+                    tvEventTitle.text = currentEventName
+                    tvEventSubtitle.text = "Secure your badge for Android developer sessions."
+                }
+                else -> {
+                    currentEventName = eventId.split("-", "_").joinToString(" ") { segment ->
+                        segment.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+                    }
+                    tvOverline.text = "EVENT REGISTRATION"
+                    tvEventTitle.text = currentEventName
+                    tvEventSubtitle.text = "Complete your registration to secure your spot."
+                }
+            }
+        }
+    }
+
+    private fun loadUserProfile() {
+        lifecycleScope.launch {
+            val result = userRepository.getUserProfile()
+            result.onSuccess { data ->
+                cachedProfile = data.profile
+                cachedUser = data.user
+                populateUserProfile(data.user, data.profile)
+            }.onFailure {
+                val tokenStorage = (application as? ProPassApplication)?.tokenStorage
+                val email = tokenStorage?.getUserEmail()
+                if (!email.isNullOrBlank()) {
+                    tvValEmail.text = email
+                    tvValFullName.text = email.substringBefore("@").replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+                    tvValInstitution.text = "ProPass Member"
+                }
+            }
+        }
+    }
+
+    private fun populateUserProfile(user: AuthUserDto, profile: UserProfileDto?) {
+        val fullName = profile?.fullName?.takeUnless {
+            it.isBlank() || it.equals("ProPass User", ignoreCase = true)
+        } ?: user.email.substringBefore("@").replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+
+        val email = user.email
+
+        val institution = profile?.organization?.takeIf { it.isNotBlank() }
+            ?: profile?.title?.takeIf { it.isNotBlank() }
+            ?: "ProPass Member"
+
+        tvValFullName.text = fullName
+        tvValEmail.text = email
+        tvValInstitution.text = institution
+
+        val phone = profile?.phone
+        if (!phone.isNullOrBlank()) {
+            prefillPhoneIfPresent(phone)
+        }
+    }
+
+    private fun prefillPhoneIfPresent(phone: String) {
+        for (holder in dynamicHolders) {
+            if (holder.question.label.contains("phone", ignoreCase = true) && holder.inputView is EditText) {
+                if (holder.inputView.text.isNullOrBlank()) {
+                    holder.inputView.setText(phone)
+                }
             }
         }
     }
@@ -556,10 +631,17 @@ class SmartFormRegistrationActivity : AppCompatActivity() {
 
         if (currentEventId.isBlank()) return
 
-        val eventRepo: EventRepository = EventRepositoryImpl()
         lifecycleScope.launch {
-            val result = eventRepo.getEvent(currentEventId)
+            val result = eventRepository.getEvent(currentEventId)
             result.onSuccess { fetchedEvent ->
+                if (tvEventTitle.text.isNullOrBlank() || tvEventTitle.text == getString(R.string.event_title)) {
+                    currentEventName = fetchedEvent.title
+                    tvEventTitle.text = fetchedEvent.title
+                    tvOverline.text = fetchedEvent.overline ?: getString(R.string.event_registration_overline)
+                    tvEventSubtitle.text = fetchedEvent.subtitle ?: getString(R.string.event_subtitle)
+                }
+                maxDuration = if (fetchedEvent.maxDuration > 0) fetchedEvent.maxDuration else maxDuration
+
                 fetchedEvent.form?.questions?.let { questions ->
                     renderDynamicQuestions(questions)
                 }
@@ -571,8 +653,8 @@ class SmartFormRegistrationActivity : AppCompatActivity() {
         val questionsToRender = questions.filterNot { q ->
             q.id == "default-full-name" ||
             q.id == "default-email" ||
-            q.label.equals("Full Name", ignoreCase = true) ||
-            q.label.equals("Email Address", ignoreCase = true)
+            (q.isDefaultField && q.label.equals("Full Name", ignoreCase = true)) ||
+            (q.isDefaultField && q.label.equals("Email Address", ignoreCase = true))
         }
 
         containerDynamicQuestions.removeAllViews()
@@ -584,11 +666,20 @@ class SmartFormRegistrationActivity : AppCompatActivity() {
         }
 
         sectionDynamicQuestions.visibility = View.VISIBLE
+        val tvDynamicHeader = findViewById<TextView>(R.id.tvDynamicQuestionsHeader)
+        if (tvDynamicHeader != null) {
+            tvDynamicHeader.text = if (questionsToRender.all { it.isDefaultField }) "Contact Information" else "Registration Questions"
+        }
 
         for (q in questionsToRender) {
             val holder = createDynamicQuestionView(q)
             containerDynamicQuestions.addView(holder.container)
             dynamicHolders.add(holder)
+        }
+
+        val phone = cachedProfile?.phone
+        if (!phone.isNullOrBlank()) {
+            prefillPhoneIfPresent(phone)
         }
     }
 

@@ -115,18 +115,16 @@ class RegistrationSuccessActivity : AppCompatActivity() {
 
     @Suppress("DEPRECATION")
     private fun loadRegistrationData() {
-        registrationData = intent.getSerializableExtra(EXTRA_REGISTRATION_DATA) as? RegistrationData
+        val data = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            intent.getSerializableExtra(EXTRA_REGISTRATION_DATA, RegistrationData::class.java)
+        } else {
+            intent.getSerializableExtra(EXTRA_REGISTRATION_DATA) as? RegistrationData
+        }
 
-        val data = registrationData ?: RegistrationData(
-            eventId = "techconf-2024",
-            eventName = "TechConf 2024",
-            fullName = "Alex Morgan",
-            email = "alex.morgan@example.com",
-            institution = "University of Technology",
-            purpose = "General Attendee",
-            durationDays = 3,
-            vehicleNumber = null
-        )
+        registrationData = data ?: run {
+            finish()
+            return
+        }
 
         tvSuccessEventTitle.text = data.eventName
         tvSuccessAttendeeName.text = "${data.fullName} • ${data.purpose}"

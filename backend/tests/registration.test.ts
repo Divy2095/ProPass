@@ -464,5 +464,23 @@ describe('Registration API (Phase 2D)', () => {
 
       expect(res.statusCode).toBe(401);
     });
+
+    it('21. After registering for an event, user has an active Digital Pass via GET /api/v1/passes/me', async () => {
+      const res = await app.inject({
+        method: 'GET',
+        url: '/api/v1/passes/me',
+        headers: { authorization: `Bearer ${tokenA}` },
+      });
+
+      expect(res.statusCode).toBe(200);
+      const body = JSON.parse(res.body);
+      expect(body.success).toBe(true);
+      expect(body.data.pass).toBeDefined();
+      expect(body.data.pass.isActive).toBe(true);
+      expect(body.data.pass.passNumber).toMatch(/^PP-\d{4}-\d{4}$/);
+      expect(body.data.pass.tier).toBe('PREMIUM');
+      expect(body.data.holder.fullName).toBe('Alex Morgan');
+      expect(body.data.holder.organization).toBe('University of Technology');
+    });
   });
 });

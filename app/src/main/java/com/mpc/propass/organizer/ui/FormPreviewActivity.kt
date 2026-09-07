@@ -42,6 +42,8 @@ class FormPreviewActivity : AppCompatActivity() {
     private lateinit var tvPreviewEventSubtitle: TextView
     private lateinit var tvPreviewEventMetadata: TextView
     private lateinit var layoutPreviewPhone: View
+    private lateinit var tvPreviewName: TextView
+    private lateinit var tvPreviewEmail: TextView
     private lateinit var tvPreviewPhoneLabel: TextView
     private lateinit var tvCustomQuestionsHeader: TextView
     private lateinit var containerCustomQuestions: LinearLayout
@@ -84,6 +86,8 @@ class FormPreviewActivity : AppCompatActivity() {
         tvPreviewEventTitle = findViewById(R.id.tvPreviewEventTitle)
         tvPreviewEventSubtitle = findViewById(R.id.tvPreviewEventSubtitle)
         tvPreviewEventMetadata = findViewById(R.id.tvPreviewEventMetadata)
+        tvPreviewName = findViewById(R.id.tvPreviewName)
+        tvPreviewEmail = findViewById(R.id.tvPreviewEmail)
         layoutPreviewPhone = findViewById(R.id.layoutPreviewPhone)
         tvPreviewPhoneLabel = findViewById(R.id.tvPreviewPhoneLabel)
         tvCustomQuestionsHeader = findViewById(R.id.tvCustomQuestionsHeader)
@@ -128,6 +132,19 @@ class FormPreviewActivity : AppCompatActivity() {
             }
         }
         tvPreviewEventMetadata.text = metadata.ifBlank { "Location and timing details" }
+
+        val tokenStorage = (application as? com.mpc.propass.ProPassApplication)?.tokenStorage
+        val userEmail = tokenStorage?.getUserEmail()
+        if (!userEmail.isNullOrBlank()) {
+            tvPreviewEmail.text = userEmail
+            val defaultName = userEmail.substringBefore("@").replaceFirstChar {
+                if (it.isLowerCase()) it.titlecase() else it.toString()
+            }
+            tvPreviewName.text = defaultName
+        } else {
+            tvPreviewName.text = "Verified Attendee"
+            tvPreviewEmail.text = "attendee@example.com"
+        }
 
         val phoneField = draft.questions.firstOrNull { it.id == "default-phone" }
         if (phoneField != null) {

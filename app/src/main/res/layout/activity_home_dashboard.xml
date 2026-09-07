@@ -435,13 +435,16 @@
 
             </FrameLayout>
 
-            <!-- Organizer Portal Access Card -->
+            <!-- Organizer Portal Access Card (Organizer role only) -->
             <FrameLayout
+                android:id="@+id/containerOrganizerPortal"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="32dp"
                 android:paddingStart="20dp"
-                android:paddingEnd="20dp">
+                android:paddingEnd="20dp"
+                android:visibility="gone"
+                tools:visibility="visible">
 
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/cardOrganizerPortal"

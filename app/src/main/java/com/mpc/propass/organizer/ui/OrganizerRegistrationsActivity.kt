@@ -65,6 +65,7 @@ class OrganizerRegistrationsActivity : AppCompatActivity() {
         eventTitle = intent.getStringExtra(EXTRA_EVENT_TITLE) ?: ""
 
         initViews()
+        applyWindowInsets()
         setupRecyclerView()
         setupListeners()
 
@@ -82,17 +83,21 @@ class OrganizerRegistrationsActivity : AppCompatActivity() {
 
     private fun setupEdgeToEdge() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        window.statusBarColor = Color.TRANSPARENT
         val controller = WindowCompat.getInsetsController(window, window.decorView)
         controller.isAppearanceLightStatusBars = true
+        controller.isAppearanceLightNavigationBars = true
+    }
 
+    private fun applyWindowInsets() {
         val root = findViewById<View>(R.id.registrationsRoot)
-        ViewCompat.setOnApplyWindowInsetsListener(root) { view, insets ->
-            val statusBars = insets.getInsets(WindowInsetsCompat.Type.statusBars())
-            val navBars = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
-            findViewById<View>(R.id.appBarLayout)?.setPadding(0, statusBars.top, 0, 0)
-            view.setPadding(0, 0, 0, navBars.bottom)
-            insets
+        root?.let {
+            ViewCompat.setOnApplyWindowInsetsListener(it) { view, insets ->
+                val statusBars = insets.getInsets(WindowInsetsCompat.Type.statusBars())
+                val navBars = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
+                findViewById<View>(R.id.appBarLayout)?.setPadding(0, statusBars.top, 0, 0)
+                view.setPadding(0, 0, 0, navBars.bottom)
+                insets
+            }
         }
     }
 

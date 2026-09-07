@@ -61,10 +61,10 @@
                     android:includeFontPadding="false"
                     android:letterSpacing="-0.02"
                     android:lineHeight="40sp"
-                    android:text="@string/event_title"
                     android:textColor="@color/on_surface"
                     android:textSize="32sp"
-                    tools:targetApi="p" />
+                    tools:targetApi="p"
+                    tools:text="@string/event_title" />
 
                 <TextView
                     android:id="@+id/tvEventSubtitle"
@@ -73,10 +73,10 @@
                     android:fontFamily="@font/inter_regular"
                     android:includeFontPadding="false"
                     android:lineHeight="20sp"
-                    android:text="@string/event_subtitle"
                     android:textColor="@color/on_surface_variant"
                     android:textSize="14sp"
-                    tools:targetApi="p" />
+                    tools:targetApi="p"
+                    tools:text="@string/event_subtitle" />
 
             </LinearLayout>
 
@@ -194,9 +194,9 @@
                                 android:layout_height="wrap_content"
                                 android:fontFamily="@font/inter_medium"
                                 android:includeFontPadding="false"
-                                android:text="@string/val_full_name"
                                 android:textColor="@color/on_surface"
-                                android:textSize="14sp" />
+                                android:textSize="14sp"
+                                tools:text="@string/val_full_name" />
                         </LinearLayout>
 
                         <ImageView
@@ -264,9 +264,9 @@
                                 android:layout_height="wrap_content"
                                 android:fontFamily="@font/inter_medium"
                                 android:includeFontPadding="false"
-                                android:text="@string/val_email_address"
                                 android:textColor="@color/on_surface"
-                                android:textSize="14sp" />
+                                android:textSize="14sp"
+                                tools:text="@string/val_email_address" />
                         </LinearLayout>
 
                         <ImageView
@@ -333,9 +333,9 @@
                                 android:layout_height="wrap_content"
                                 android:fontFamily="@font/inter_medium"
                                 android:includeFontPadding="false"
-                                android:text="@string/val_institution"
                                 android:textColor="@color/on_surface"
-                                android:textSize="14sp" />
+                                android:textSize="14sp"
+                                tools:text="@string/val_institution" />
                         </LinearLayout>
 
                         <ImageView
