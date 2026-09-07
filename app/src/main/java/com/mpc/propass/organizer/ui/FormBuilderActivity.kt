@@ -8,12 +8,14 @@ import android.view.View
 import android.widget.ImageButton
 import android.widget.RadioGroup
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
@@ -21,11 +23,18 @@ import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
+import com.mpc.propass.ProPassApplication
 import com.mpc.propass.R
+import com.mpc.propass.organizer.data.OrganizerEventStore
+import com.mpc.propass.organizer.data.OrganizerFormRepository
+import com.mpc.propass.organizer.data.OrganizerFormRepositoryImpl
 import com.mpc.propass.organizer.model.FormQuestion
 import com.mpc.propass.organizer.model.FormQuestionType
 import com.mpc.propass.organizer.model.OrganizerEventDraft
+import com.mpc.propass.organizer.model.toDto
+import com.mpc.propass.organizer.model.toFormQuestion
 import com.mpc.propass.organizer.ui.adapter.FormQuestionAdapter
+import kotlinx.coroutines.launch
 
 /**
  * Screen 2 of Organizer Flow:
@@ -60,6 +69,7 @@ class FormBuilderActivity : AppCompatActivity() {
         initViews()
         setupListeners()
         updateCustomQuestionsUi()
+        loadExistingFormIfAvailable()
     }
 
     private fun setupEdgeToEdge() {
@@ -144,10 +154,76 @@ class FormBuilderActivity : AppCompatActivity() {
         }
 
         btnPreviewForm.setOnClickListener {
+            saveFormAndPreview()
+        }
+    }
+
+    private fun loadExistingFormIfAvailable() {
+        val eventId = draft.id
+        if (eventId.isBlank()) return
+
+        val formRepo: OrganizerFormRepository = (application as? ProPassApplication)?.organizerFormRepository
+            ?: OrganizerFormRepositoryImpl()
+
+        lifecycleScope.launch {
+            val result = formRepo.getForm(eventId)
+            result.onSuccess { formDto ->
+                if (formDto.questions.isNotEmpty()) {
+                    val questions = formDto.questions.map { it.toFormQuestion() }
+                    draft.questions.clear()
+                    draft.questions.addAll(questions)
+                    val phoneQuestion = draft.questions.firstOrNull { it.id == "default-phone" || it.label.equals("Phone Number", ignoreCase = true) }
+                    cbPhoneRequired.isChecked = phoneQuestion?.isRequired == true
+                    updateCustomQuestionsUi()
+                }
+            }
+        }
+    }
+
+    private fun saveFormAndPreview() {
+        val eventId = draft.id
+        if (eventId.isBlank()) {
             val intent = Intent(this, FormPreviewActivity::class.java).apply {
                 putExtra(FormPreviewActivity.EXTRA_DRAFT, draft)
             }
             startActivity(intent)
+            return
+        }
+
+        btnPreviewForm.isEnabled = false
+        btnPreviewForm.text = "Saving Form..."
+
+        val formRepo: OrganizerFormRepository = (application as? ProPassApplication)?.organizerFormRepository
+            ?: OrganizerFormRepositoryImpl()
+
+        draft.questions.firstOrNull { it.id == "default-phone" || it.label.equals("Phone Number", ignoreCase = true) }?.isRequired = cbPhoneRequired.isChecked
+
+        val dtoList = draft.questions.mapIndexed { index, q -> q.toDto(index) }
+
+        lifecycleScope.launch {
+            val result = formRepo.saveForm(eventId, dtoList)
+            btnPreviewForm.isEnabled = true
+            btnPreviewForm.setText(R.string.btn_preview_form)
+
+            result.onSuccess { savedForm ->
+                if (savedForm.questions.isNotEmpty()) {
+                    val savedQuestions = savedForm.questions.map { it.toFormQuestion() }
+                    draft.questions.clear()
+                    draft.questions.addAll(savedQuestions)
+                }
+                OrganizerEventStore.saveEvent(draft.toPublishedEvent())
+
+                val intent = Intent(this@FormBuilderActivity, FormPreviewActivity::class.java).apply {
+                    putExtra(FormPreviewActivity.EXTRA_DRAFT, draft)
+                }
+                startActivity(intent)
+            }.onFailure { error ->
+                Toast.makeText(
+                    this@FormBuilderActivity,
+                    error.message ?: "Failed to save form",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
         }
     }
 

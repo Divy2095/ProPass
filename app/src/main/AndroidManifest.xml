@@ -153,6 +153,27 @@
             android:theme="@style/Theme.ProPass"
             tools:ignore="LockedOrientationActivity" />
 
+        <activity
+            android:name=".organizer.ui.OrganizerEventDetailActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.ProPass"
+            tools:ignore="LockedOrientationActivity" />
+
+        <activity
+            android:name=".organizer.ui.OrganizerRegistrationsActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.ProPass"
+            tools:ignore="LockedOrientationActivity" />
+
+        <activity
+            android:name=".organizer.ui.OrganizerRegistrationDetailActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.ProPass"
+            tools:ignore="LockedOrientationActivity" />
+
     </application>
 
 </manifest>

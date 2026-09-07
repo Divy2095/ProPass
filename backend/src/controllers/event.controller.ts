@@ -1,6 +1,6 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { ZodError } from 'zod';
-import { eventParamsSchema, validateQrSchema } from '../models/event.schema.js';
+import { createEventSchema, eventParamsSchema, validateQrSchema } from '../models/event.schema.js';
 import { EventService } from '../services/event.service.js';
 
 export class EventController {
@@ -36,6 +36,48 @@ export class EventController {
         success: true,
         message: 'Valid ProPass event QR code',
         data: result,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error: any) {
+      return EventController.handleError(error, reply);
+    }
+  }
+
+  /**
+   * POST /api/v1/events (Protected - Organizer only)
+   */
+  static async createEvent(req: FastifyRequest, reply: FastifyReply) {
+    try {
+      const input = createEventSchema.parse(req.body);
+      const organizerId = req.user!.userId;
+      const event = await EventService.createEvent(input, organizerId);
+
+      return reply.status(201).send({
+        success: true,
+        message: 'Event created successfully',
+        data: {
+          event,
+        },
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error: any) {
+      return EventController.handleError(error, reply);
+    }
+  }
+
+  /**
+   * GET /api/v1/organizer/events (Protected - Organizer only)
+   */
+  static async getOrganizerEvents(req: FastifyRequest, reply: FastifyReply) {
+    try {
+      const organizerId = req.user!.userId;
+      const events = await EventService.getEventsByOrganizer(organizerId);
+
+      return reply.status(200).send({
+        success: true,
+        data: {
+          events,
+        },
         timestamp: new Date().toISOString(),
       });
     } catch (error: any) {

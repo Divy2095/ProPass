@@ -5,6 +5,7 @@ import com.mpc.propass.network.api.ProPassApiService
 import com.mpc.propass.network.model.ApiError
 import com.mpc.propass.network.model.CreateRegistrationRequest
 import com.mpc.propass.network.model.CreateRegistrationResponseData
+import com.mpc.propass.network.model.RegistrationAnswerDto
 import com.mpc.propass.network.model.RegistrationDto
 import java.io.IOException
 
@@ -27,7 +28,8 @@ interface RegistrationRepository {
         institution: String,
         purpose: String,
         durationDays: Int,
-        vehicleNumber: String? = null
+        vehicleNumber: String? = null,
+        answers: List<RegistrationAnswerDto> = emptyList()
     ): Result<CreateRegistrationResponseData>
 
     suspend fun getMyRegistrations(): Result<List<RegistrationDto>>
@@ -49,7 +51,8 @@ class RegistrationRepositoryImpl(
         institution: String,
         purpose: String,
         durationDays: Int,
-        vehicleNumber: String?
+        vehicleNumber: String?,
+        answers: List<RegistrationAnswerDto>
     ): Result<CreateRegistrationResponseData> {
         val trimmedEventId = eventId.trim()
         val trimmedFullName = fullName.trim()
@@ -84,7 +87,8 @@ class RegistrationRepositoryImpl(
             institution = trimmedInstitution,
             purpose = trimmedPurpose,
             durationDays = durationDays,
-            vehicleNumber = trimmedVehicle
+            vehicleNumber = trimmedVehicle,
+            answers = answers
         )
 
         return try {

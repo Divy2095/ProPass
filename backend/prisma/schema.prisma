@@ -12,6 +12,13 @@ enum UserRole {
   ORGANIZER
 }
 
+enum FormQuestionType {
+  SHORT_TEXT
+  LONG_TEXT
+  MULTIPLE_CHOICE
+  CHECKBOX
+}
+
 enum PurposeOfVisit {
   GENERAL_ATTENDEE
   SPEAKER
@@ -39,6 +46,7 @@ model User {
   digitalPass   DigitalPass?
   registrations Registration[]
   refreshTokens RefreshToken[]
+  organizedEvents Event[]
 
   @@map("users")
 }
@@ -90,10 +98,17 @@ model Event {
   endDate        DateTime
   maxDuration    Int            @default(5)
   isActive       Boolean        @default(true)
+  date           String?
+  startTime      String?
+  endTime        String?
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
+  organizerId    String?
+  organizer      User?          @relation(fields: [organizerId], references: [id], onDelete: SetNull)
+
   registrations  Registration[]
+  form           RegistrationForm?
 
   @@map("events")
 }
@@ -114,9 +129,55 @@ model Registration {
 
   user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   event          Event              @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  answers        RegistrationAnswer[]
 
   @@unique([userId, eventId])
   @@map("registrations")
+}
+
+model RegistrationForm {
+  id          String         @id @default(uuid())
+  eventId     String         @unique
+  event       Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  questions   FormQuestion[]
+
+  @@map("registration_forms")
+}
+
+model FormQuestion {
+  id             String           @id @default(uuid())
+  formId         String
+  label          String
+  type           FormQuestionType @default(SHORT_TEXT)
+  isRequired     Boolean          @default(false)
+  options        String[]         @default([])
+  isDefaultField Boolean          @default(false)
+  orderIndex     Int              @default(0)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  form           RegistrationForm @relation(fields: [formId], references: [id], onDelete: Cascade)
+  answers        RegistrationAnswer[]
+
+  @@index([formId, orderIndex])
+  @@map("form_questions")
+}
+
+model RegistrationAnswer {
+  id             String        @id @default(uuid())
+  registrationId String
+  questionId     String
+  value          String
+  createdAt      DateTime      @default(now())
+
+  registration   Registration  @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  question       FormQuestion  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([registrationId, questionId])
+  @@map("registration_answers")
 }
 
 model RefreshToken {

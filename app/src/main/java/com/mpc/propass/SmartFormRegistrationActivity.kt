@@ -1,29 +1,42 @@
 package com.mpc.propass
 
 import android.content.Intent
+import android.graphics.Typeface
 import android.os.Bundle
 import android.text.Editable
 import android.text.InputFilter
+import android.text.InputType
 import android.text.TextWatcher
 import android.util.Patterns
 import android.util.TypedValue
+import android.view.Gravity
 import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import android.view.View
 import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.LinearLayout
+import android.widget.RadioButton
+import android.widget.RadioGroup
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.mpc.propass.data.repository.EventRepository
+import com.mpc.propass.data.repository.EventRepositoryImpl
 import com.mpc.propass.network.model.EventDto
+import com.mpc.propass.network.model.FormQuestionDto
+import kotlinx.coroutines.launch
 
 /**
  * Smart Form Registration screen implementation for ProPass Digital Identity System.
@@ -41,6 +54,14 @@ class SmartFormRegistrationActivity : AppCompatActivity() {
         const val EXTRA_EVENT_DTO = "EXTRA_EVENT_DTO"
         const val EXTRA_SCANNED_QR = "EXTRA_SCANNED_QR"
     }
+
+    private class DynamicQuestionHolder(
+        val question: FormQuestionDto,
+        val container: View,
+        val errorTextView: TextView,
+        val inputView: View,
+        val getValue: () -> String
+    )
 
     private lateinit var smartFormRoot: FrameLayout
     private lateinit var topAppBar: LinearLayout
@@ -75,6 +96,10 @@ class SmartFormRegistrationActivity : AppCompatActivity() {
     private lateinit var layoutVehicleContainer: FrameLayout
     private lateinit var etVehicle: EditText
 
+    private lateinit var sectionDynamicQuestions: LinearLayout
+    private lateinit var containerDynamicQuestions: LinearLayout
+    private val dynamicHolders = mutableListOf<DynamicQuestionHolder>()
+
     private lateinit var btnReviewSubmit: MaterialButton
 
     private var currentEventId: String = "techconf-2024"
@@ -102,6 +127,9 @@ class SmartFormRegistrationActivity : AppCompatActivity() {
         setupPurposeDropdown()
         setupInputBehaviors()
         setupSubmitButton()
+        @Suppress("DEPRECATION")
+        val eventDto = intent.getSerializableExtra(EXTRA_EVENT_DTO) as? EventDto
+        loadEventForm(eventDto)
     }
 
     private fun setupEdgeToEdge() {
@@ -144,6 +172,9 @@ class SmartFormRegistrationActivity : AppCompatActivity() {
 
         layoutVehicleContainer = findViewById(R.id.layoutVehicleContainer)
         etVehicle = findViewById(R.id.etVehicle)
+
+        sectionDynamicQuestions = findViewById(R.id.sectionDynamicQuestions)
+        containerDynamicQuestions = findViewById(R.id.containerDynamicQuestions)
 
         btnReviewSubmit = findViewById(R.id.btnReviewSubmit)
     }
@@ -377,6 +408,17 @@ class SmartFormRegistrationActivity : AppCompatActivity() {
                 val duration = etDuration.text.toString().trim().toInt()
                 val vehicle = etVehicle.text.toString().trim().takeIf { it.isNotBlank() }
 
+                val dynamicAnswers = dynamicHolders.mapNotNull { holder ->
+                    val value = holder.getValue()
+                    if (value.isNotBlank()) {
+                        RegistrationAnswerData(
+                            questionId = holder.question.id,
+                            questionLabel = holder.question.label,
+                            value = value
+                        )
+                    } else null
+                }
+
                 val registrationData = RegistrationData(
                     eventId = currentEventId,
                     eventName = currentEventName,
@@ -385,7 +427,8 @@ class SmartFormRegistrationActivity : AppCompatActivity() {
                     institution = institution,
                     purpose = purpose,
                     durationDays = duration,
-                    vehicleNumber = vehicle
+                    vehicleNumber = vehicle,
+                    answers = dynamicAnswers
                 )
 
                 val intent = Intent(this, ReviewRegistrationActivity::class.java).apply {
@@ -406,6 +449,7 @@ class SmartFormRegistrationActivity : AppCompatActivity() {
      * - Purpose: must be selected from options
      * - Expected Duration: integer between 1 and 5
      * - Vehicle Number: optional
+     * - Dynamic Custom Questions: required checks based on question configuration
      */
     private fun validateForm(): Boolean {
         var isValid = true
@@ -477,7 +521,271 @@ class SmartFormRegistrationActivity : AppCompatActivity() {
             clearDurationError()
         }
 
+        // 6. Dynamic custom questions validation
+        for (holder in dynamicHolders) {
+            val q = holder.question
+            val value = holder.getValue()
+            if (q.isRequired && value.isBlank()) {
+                holder.errorTextView.text = when (q.type) {
+                    "MULTIPLE_CHOICE" -> "Please select an option"
+                    "CHECKBOX" -> "Please select at least one option"
+                    else -> "${q.label} is required"
+                }
+                holder.errorTextView.visibility = View.VISIBLE
+                if (holder.inputView is EditText) {
+                    holder.inputView.setBackgroundResource(R.drawable.bg_field_error)
+                }
+                isValid = false
+            } else {
+                holder.errorTextView.visibility = View.GONE
+                if (holder.inputView is EditText) {
+                    holder.inputView.setBackgroundResource(R.drawable.bg_field_selector)
+                }
+            }
+        }
+
         return isValid
+    }
+
+    private fun loadEventForm(passedEventDto: EventDto?) {
+        val form = passedEventDto?.form
+        if (form != null && form.questions.isNotEmpty()) {
+            renderDynamicQuestions(form.questions)
+            return
+        }
+
+        if (currentEventId.isBlank()) return
+
+        val eventRepo: EventRepository = EventRepositoryImpl()
+        lifecycleScope.launch {
+            val result = eventRepo.getEvent(currentEventId)
+            result.onSuccess { fetchedEvent ->
+                fetchedEvent.form?.questions?.let { questions ->
+                    renderDynamicQuestions(questions)
+                }
+            }
+        }
+    }
+
+    private fun renderDynamicQuestions(questions: List<FormQuestionDto>) {
+        val questionsToRender = questions.filterNot { q ->
+            q.id == "default-full-name" ||
+            q.id == "default-email" ||
+            q.label.equals("Full Name", ignoreCase = true) ||
+            q.label.equals("Email Address", ignoreCase = true)
+        }
+
+        containerDynamicQuestions.removeAllViews()
+        dynamicHolders.clear()
+
+        if (questionsToRender.isEmpty()) {
+            sectionDynamicQuestions.visibility = View.GONE
+            return
+        }
+
+        sectionDynamicQuestions.visibility = View.VISIBLE
+
+        for (q in questionsToRender) {
+            val holder = createDynamicQuestionView(q)
+            containerDynamicQuestions.addView(holder.container)
+            dynamicHolders.add(holder)
+        }
+    }
+
+    private fun createDynamicQuestionView(question: FormQuestionDto): DynamicQuestionHolder {
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            val params = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = dpToPx(16f).toInt()
+            }
+            layoutParams = params
+        }
+
+        val tvLabel = TextView(this).apply {
+            text = if (question.isRequired) "${question.label} *" else "${question.label} (Optional)"
+            setTextColor(ContextCompat.getColor(this@SmartFormRegistrationActivity, R.color.on_surface))
+            textSize = 12f
+            val font = ResourcesCompat.getFont(this@SmartFormRegistrationActivity, R.font.inter_medium)
+            if (font != null) typeface = font
+            val params = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                marginStart = dpToPx(8f).toInt()
+                bottomMargin = dpToPx(4f).toInt()
+            }
+            layoutParams = params
+        }
+        container.addView(tvLabel)
+
+        val tvError = TextView(this).apply {
+            setTextColor(ContextCompat.getColor(this@SmartFormRegistrationActivity, R.color.error))
+            textSize = 12f
+            val font = ResourcesCompat.getFont(this@SmartFormRegistrationActivity, R.font.inter_regular)
+            if (font != null) typeface = font
+            visibility = View.GONE
+            val params = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                marginStart = dpToPx(8f).toInt()
+                topMargin = dpToPx(4f).toInt()
+                bottomMargin = dpToPx(8f).toInt()
+            }
+            layoutParams = params
+        }
+
+        when (question.type) {
+            "LONG_TEXT" -> {
+                val editText = EditText(this).apply {
+                    val params = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    )
+                    layoutParams = params
+                    minHeight = dpToPx(88f).toInt()
+                    gravity = Gravity.TOP or Gravity.START
+                    setBackgroundResource(R.drawable.bg_field_selector)
+                    setTextColor(ContextCompat.getColor(this@SmartFormRegistrationActivity, R.color.on_surface))
+                    setHintTextColor(ContextCompat.getColor(this@SmartFormRegistrationActivity, R.color.outline_variant))
+                    textSize = 16f
+                    hint = "Enter detailed answer..."
+                    setPadding(dpToPx(16f).toInt(), dpToPx(12f).toInt(), dpToPx(16f).toInt(), dpToPx(12f).toInt())
+                    inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+                    minLines = 3
+                    maxLines = 6
+                    addTextChangedListener(object : TextWatcher {
+                        override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                        override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                            tvError.visibility = View.GONE
+                            setBackgroundResource(R.drawable.bg_field_selector)
+                        }
+                        override fun afterTextChanged(s: Editable?) {}
+                    })
+                }
+                container.addView(editText)
+                container.addView(tvError)
+                return DynamicQuestionHolder(
+                    question = question,
+                    container = container,
+                    errorTextView = tvError,
+                    inputView = editText,
+                    getValue = { editText.text.toString().trim() }
+                )
+            }
+
+            "MULTIPLE_CHOICE" -> {
+                val radioGroup = RadioGroup(this).apply {
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    )
+                    setOnCheckedChangeListener { _, _ ->
+                        tvError.visibility = View.GONE
+                    }
+                }
+                for (option in question.options) {
+                    val rb = RadioButton(this).apply {
+                        text = option
+                        textSize = 14f
+                        setTextColor(ContextCompat.getColor(this@SmartFormRegistrationActivity, R.color.on_surface))
+                    }
+                    radioGroup.addView(rb)
+                }
+                container.addView(radioGroup)
+                container.addView(tvError)
+                return DynamicQuestionHolder(
+                    question = question,
+                    container = container,
+                    errorTextView = tvError,
+                    inputView = radioGroup,
+                    getValue = {
+                        val checkedId = radioGroup.checkedRadioButtonId
+                        if (checkedId != -1) {
+                            radioGroup.findViewById<RadioButton>(checkedId)?.text?.toString().orEmpty()
+                        } else {
+                            ""
+                        }
+                    }
+                )
+            }
+
+            "CHECKBOX" -> {
+                val checkBoxesContainer = LinearLayout(this).apply {
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    )
+                    orientation = LinearLayout.VERTICAL
+                }
+                val checkBoxes = mutableListOf<MaterialCheckBox>()
+                for (option in question.options) {
+                    val cb = MaterialCheckBox(this).apply {
+                        text = option
+                        textSize = 14f
+                        setTextColor(ContextCompat.getColor(this@SmartFormRegistrationActivity, R.color.on_surface))
+                        setOnCheckedChangeListener { _, _ ->
+                            tvError.visibility = View.GONE
+                        }
+                    }
+                    checkBoxes.add(cb)
+                    checkBoxesContainer.addView(cb)
+                }
+                container.addView(checkBoxesContainer)
+                container.addView(tvError)
+                return DynamicQuestionHolder(
+                    question = question,
+                    container = container,
+                    errorTextView = tvError,
+                    inputView = checkBoxesContainer,
+                    getValue = {
+                        checkBoxes.filter { it.isChecked }.joinToString(", ") { it.text.toString() }
+                    }
+                )
+            }
+
+            else -> {
+                // SHORT_TEXT (default)
+                val editText = EditText(this).apply {
+                    val params = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        dpToPx(48f).toInt()
+                    )
+                    layoutParams = params
+                    setBackgroundResource(R.drawable.bg_field_selector)
+                    setTextColor(ContextCompat.getColor(this@SmartFormRegistrationActivity, R.color.on_surface))
+                    setHintTextColor(ContextCompat.getColor(this@SmartFormRegistrationActivity, R.color.outline_variant))
+                    textSize = 16f
+                    hint = "Enter ${question.label.lowercase()}"
+                    setPadding(dpToPx(16f).toInt(), 0, dpToPx(16f).toInt(), 0)
+                    inputType = if (question.label.contains("phone", ignoreCase = true)) {
+                        InputType.TYPE_CLASS_PHONE
+                    } else {
+                        InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_WORDS
+                    }
+                    addTextChangedListener(object : TextWatcher {
+                        override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                        override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                            tvError.visibility = View.GONE
+                            setBackgroundResource(R.drawable.bg_field_selector)
+                        }
+                        override fun afterTextChanged(s: Editable?) {}
+                    })
+                }
+                container.addView(editText)
+                container.addView(tvError)
+                return DynamicQuestionHolder(
+                    question = question,
+                    container = container,
+                    errorTextView = tvError,
+                    inputView = editText,
+                    getValue = { editText.text.toString().trim() }
+                )
+            }
+        }
     }
 
     private fun clearFullNameError() {

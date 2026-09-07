@@ -60,6 +60,30 @@ export const createRegistrationSchema = z.object({
     .optional()
     .nullable()
     .transform((val) => (val && val.length > 0 ? val.toUpperCase() : null)),
+  answers: z
+    .array(
+      z.object({
+        questionId: z
+          .string({ required_error: 'Question identifier is required' })
+          .trim()
+          .min(1, 'Question identifier cannot be empty'),
+        value: z.union([z.string().trim(), z.array(z.string().trim())]),
+      })
+    )
+    .optional()
+    .default([]),
 });
 
+export type RegistrationAnswerInput = {
+  questionId: string;
+  value: string | string[];
+};
+
 export type CreateRegistrationInput = z.infer<typeof createRegistrationSchema>;
+
+export const registrationParamsSchema = z.object({
+  registrationId: z
+    .string({ required_error: 'Registration identifier is required' })
+    .trim()
+    .min(1, 'Registration identifier cannot be empty'),
+});

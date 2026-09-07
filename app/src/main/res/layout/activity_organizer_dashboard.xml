@@ -55,7 +55,7 @@
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/inter_regular"
                     android:includeFontPadding="false"
-                    android:text="Demo / Local Mode"
+                    android:text="Organizer Mode"
                     android:textColor="@color/primary"
                     android:textSize="11sp" />
             </LinearLayout>
@@ -77,6 +77,16 @@
                 app:strokeColor="@color/outline_variant" />
 
         </LinearLayout>
+
+        <!-- Loading Progress Indicator -->
+        <ProgressBar
+            android:id="@+id/dashboardProgressBar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="4dp"
+            android:indeterminate="true"
+            android:visibility="gone" />
+
     </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.core.widget.NestedScrollView
@@ -179,6 +189,54 @@
                     android:textColor="@color/primary"
                     android:textSize="12sp"
                     tools:text="0 Events" />
+            </LinearLayout>
+
+            <!-- Error State Container -->
+            <LinearLayout
+                android:id="@+id/layoutErrorState"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:layout_marginBottom="24dp"
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                android:padding="24dp"
+                android:visibility="gone"
+                tools:visibility="gone">
+
+                <TextView
+                    android:id="@+id/tvErrorTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:fontFamily="@font/inter_bold"
+                    android:includeFontPadding="false"
+                    android:text="Unable to load events"
+                    android:textAlignment="center"
+                    android:textColor="@color/on_surface"
+                    android:textSize="18sp" />
+
+                <TextView
+                    android:id="@+id/tvErrorMessage"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="24dp"
+                    android:fontFamily="@font/inter_regular"
+                    android:includeFontPadding="false"
+                    android:lineHeight="20sp"
+                    android:text="Check your internet connection and try again."
+                    android:textAlignment="center"
+                    android:textColor="@color/on_surface_variant"
+                    android:textSize="14sp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnRetryEvents"
+                    style="@style/Widget.ProPass.Button.Primary"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:paddingStart="24dp"
+                    android:paddingEnd="24dp"
+                    android:text="Retry" />
             </LinearLayout>
 
             <!-- Empty State Container -->

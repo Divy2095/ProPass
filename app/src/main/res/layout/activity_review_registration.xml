@@ -349,6 +349,48 @@
 
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- Card 3: Additional Information (Dynamic Form Answers) -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardAdditionalDetails"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                android:visibility="gone"
+                app:cardBackgroundColor="@color/surface_container_low"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="1dp"
+                app:cardPreventCornerOverlap="false"
+                app:strokeWidth="0dp">
+
+                <LinearLayout
+                    android:id="@+id/containerAdditionalDetails"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="14dp"
+                        android:fontFamily="@font/inter_semibold"
+                        android:includeFontPadding="false"
+                        android:letterSpacing="0.05"
+                        android:text="ADDITIONAL INFORMATION"
+                        android:textAllCaps="true"
+                        android:textColor="@color/primary"
+                        android:textSize="12sp" />
+
+                    <LinearLayout
+                        android:id="@+id/layoutDynamicAnswers"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical" />
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
             <!-- Bottom Spacer -->
             <View
                 android:id="@+id/bottomBarSpacer"

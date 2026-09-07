@@ -553,6 +553,34 @@
 
             </LinearLayout>
 
+            <!-- Dynamic Organizer Questions Section -->
+            <LinearLayout
+                android:id="@+id/sectionDynamicQuestions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingBottom="16dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/tvDynamicQuestionsHeader"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    android:fontFamily="@font/inter_semibold"
+                    android:includeFontPadding="false"
+                    android:text="Additional Information"
+                    android:textColor="@color/on_surface"
+                    android:textSize="20sp" />
+
+                <LinearLayout
+                    android:id="@+id/containerDynamicQuestions"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+
+            </LinearLayout>
+
             <!-- Bottom Spacer to ensure full scrollability past sticky button -->
             <View
                 android:id="@+id/bottomBarSpacer"

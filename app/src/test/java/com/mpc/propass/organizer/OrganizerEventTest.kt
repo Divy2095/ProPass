@@ -115,6 +115,26 @@ class OrganizerEventTest {
     }
 
     @Test
+    fun testPublishedEventPreservesBackendSlugAndQrPayload() {
+        val draft = OrganizerEventDraft.createDefaultDraft().apply {
+            id = "backend-ev-456"
+            slug = "custom-server-slug-2"
+            qrPayload = "https://propass.id/event/custom-server-slug-2"
+            name = "Special Summit"
+            date = "2026-07-20"
+            location = "New York"
+        }
+
+        val event = draft.toPublishedEvent()
+
+        assertEquals("backend-ev-456", event.id)
+        assertEquals("custom-server-slug-2", event.slug)
+        assertEquals("https://propass.id/event/custom-server-slug-2", event.qrPayload)
+        assertEquals("Special Summit", event.name)
+    }
+
+
+    @Test
     fun testOrganizerEventStoreCrud() {
         assertTrue(OrganizerEventStore.getEvents().isEmpty())
 

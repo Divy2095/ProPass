@@ -286,4 +286,65 @@ class RegistrationRepositoryTest {
         assertFalse(result.isSuccess)
         assertTrue(result.exceptionOrNull() is RegistrationAuthException)
     }
+
+    @Test
+    fun createRegistration_withAnswers_serializesCorrectly() = runBlocking {
+        val json = """
+            {
+                "success": true,
+                "message": "Registration confirmed successfully",
+                "data": {
+                    "registration": {
+                        "id": "reg-102",
+                        "userId": "usr-101",
+                        "eventId": "evt-101",
+                        "fullName": "Sarah Jenkins",
+                        "email": "sarah.jenkins@example.com",
+                        "institution": "TechFlow Inc.",
+                        "purpose": "GENERAL_ATTENDEE",
+                        "durationDays": 2,
+                        "status": "CONFIRMED",
+                        "registeredAt": "2026-09-07T12:00:00Z",
+                        "answers": [
+                            {
+                                "questionId": "q-size",
+                                "value": "L"
+                            },
+                            {
+                                "questionId": "q-diet",
+                                "value": "Vegan"
+                            }
+                        ]
+                    }
+                },
+                "timestamp": "2026-09-07T12:00:00Z"
+            }
+        """.trimIndent()
+
+        server.enqueue(MockResponse().setResponseCode(201).setBody(json))
+
+        val answers = listOf(
+            com.mpc.propass.network.model.RegistrationAnswerDto(questionId = "q-size", value = "L"),
+            com.mpc.propass.network.model.RegistrationAnswerDto(questionId = "q-diet", value = "Vegan")
+        )
+
+        val result = registrationRepository.createRegistration(
+            eventId = "techconf-2024",
+            fullName = "Sarah Jenkins",
+            email = "sarah.jenkins@example.com",
+            institution = "TechFlow Inc.",
+            purpose = "GENERAL_ATTENDEE",
+            durationDays = 2,
+            answers = answers
+        )
+
+        assertTrue(result.isSuccess)
+        val reg = result.getOrThrow().registration
+        assertEquals(2, reg.answers.size)
+        assertEquals("L", reg.answers[0].value)
+
+        val recorded = server.takeRequest()
+        val body = recorded.body.readUtf8()
+        assertTrue(body.contains("\"answers\":[{\"questionId\":\"q-size\",\"value\":\"L\"},{\"questionId\":\"q-diet\",\"value\":\"Vegan\"}]"))
+    }
 }

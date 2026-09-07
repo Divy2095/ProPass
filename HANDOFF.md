@@ -607,6 +607,134 @@ All listed features have been executed and verified on physical hardware & devel
     * 105/105 unit tests passing across 23 test suites (`./gradlew testDebugUnitTest`).
     * Full debug build clean (`./gradlew assembleDebug`).
 
+* [x] **Phase 4B: Real Organizer Event Creation & Persistence (Completed):**
+  * **Backend (Fastify + Prisma + PostgreSQL):**
+    * Added `date String?`, `startTime String?`, `endTime String?`, and `organizerId String?` to `Event` model in Prisma schema, with foreign key relation to `User` (`onDelete: SetNull`) and reverse relation `organizedEvents Event[]` on `User`.
+    * Applied PostgreSQL migration `20260907130000_add_event_organizer_and_time_fields`.
+    * Added Zod validation schema `createEventSchema` accepting `name`/`title`, `description`, `date` (`YYYY-MM-DD`), `startTime`, `endTime`, `location`, `maxDuration`, and optional custom `slug`.
+    * Implemented `EventService`:
+      * `generateUniqueSlug(baseTitle, customSlug)` ensuring server-side collision resolution (e.g. `summit-2026`, `summit-2026-2`).
+      * `parseEventDates(...)` producing compliant ISO 8601 UTC `startDate` and `endDate` while maintaining raw string representations.
+      * `createEvent(input, organizerId)` persisting event to PostgreSQL and returning event with canonical `qrPayload: "https://propass.id/event/${slug}"`.
+      * `getEventsByOrganizer(organizerId)` returning all events created by the authenticated organizer sorted newest-first.
+    * Registered endpoints with `[authenticate, requireRole(UserRole.ORGANIZER)]`:
+      * `POST /api/v1/events` (201 Created)
+      * `GET /api/v1/organizer/events` (200 OK)
+    * Created comprehensive Vitest test suite `backend/tests/organizer-event.test.ts` (11 test cases) covering authentication/authorization, input validation, slug generation, persistence, listing isolation, and attendee QR scanning/lookup/registration compatibility.
+    * 90/90 Vitest tests passing across all 8 test suites.
+  * **Android (Kotlin + Retrofit + Coroutines):**
+    * Added networking DTOs in `EventModels.kt`: `CreateEventRequest`, `CreateEventResponseData`, `OrganizerEventsResponseData`, and updated `EventDto` with `date`, `startTime`, `endTime`, `organizerId`, `qrPayload`.
+    * Added Retrofit API methods in `ProPassApiService.kt`: `createEvent` and `getOrganizerEvents`.
+    * Updated `OrganizerModels.kt`:
+      * `OrganizerEventDraft` and `OrganizerEvent` now carry and preserve `slug` and `qrPayload` from backend responses.
+      * Added `EventDto.toOrganizerEvent()` mapping extension.
+    * Created `OrganizerEventRepository` interface and `OrganizerEventRepositoryImpl` handling Moshi JSON parsing, network failure resolution, and error body mapping.
+    * Exposed and initialized `organizerEventRepository` in `ProPassApplication.kt`.
+    * Connected `CreateEventActivity.kt`:
+      * Validates inputs, shows loading state on `btnContinueToBuilder` ("Creating Event...").
+      * Calls `organizerEventRepository.createEvent(request)` on background thread via `lifecycleScope`.
+      * On success, sets backend `id`, `slug`, `qrPayload` onto `OrganizerEventDraft`, synchronizes `OrganizerEventStore`, and launches `FormBuilderActivity`.
+      * On failure, restores button state and surfaces error toast.
+    * Connected `OrganizerDashboardActivity.kt`:
+      * Queries `organizerEventRepository.getMyEvents()` asynchronously in `refreshEvents()`.
+      * Displays `dashboardProgressBar` horizontal loader during network calls.
+      * Displays `layoutErrorState` with retry button (`btnRetryEvents`) if network fails and no cached events exist.
+      * Gracefully falls back to cached events with a toast if network fails but cache is present.
+      * Synchronizes retrieved events into `OrganizerEventStore`.
+    * Added 8 unit tests in `OrganizerEventRepositoryTest.kt` with MockWebServer and updated `OrganizerEventTest.kt`.
+    * All Android unit tests passing (`./gradlew testDebugUnitTest`).
+    * Full debug APK cleanly compiled (`./gradlew assembleDebug`).
+    * `git diff --check` clean.
+
+* [x] **Phase 4C: Real Registration Form Persistence & Attendee Dynamic Rendering (Completed):**
+  * **Backend (Fastify + Prisma + PostgreSQL):**
+    * Added `enum FormQuestionType { SHORT_TEXT, LONG_TEXT, MULTIPLE_CHOICE, CHECKBOX }` to Prisma schema.
+    * Added `RegistrationForm` (1:1 with `Event`), `FormQuestion` (1:N with `RegistrationForm`, ordered by `orderIndex`), and `RegistrationAnswer` (N:1 with `Registration` and `FormQuestion`) models in PostgreSQL.
+    * Applied safe PostgreSQL migration `20260907140000_add_registration_forms_and_answers`.
+    * Implemented Zod validation schemas in `form.schema.ts`:
+      * Validates labels, field types, min 2 options for multiple-choice and checkboxes, and enforces preservation of required verified identity fields (`Full Name` and `Email Address`).
+    * Implemented `FormService`:
+      * `saveForm(eventId, organizerId, questions)`: Atomic database transaction ensuring event ownership (403 if unauthenticated or non-owner), upserting `RegistrationForm`, replacing question sets with deterministic `orderIndex`, and returning saved questions.
+      * `getFormByEventId(eventId, organizerId?)`: Retrieves form with questions ordered by `orderIndex ASC`, or synthesizes default questions if no custom form was configured yet.
+    * Added endpoints in `event.routes.ts` protected with `[authenticate, requireRole(UserRole.ORGANIZER)]`:
+      * `GET /api/v1/events/:eventId/form` (200 OK)
+      * `PUT /api/v1/events/:eventId/form` (200 OK)
+    * Updated `EventService.getEventByIdOrSlug` to embed the published `form` with its questions for attendee QR validation and event detail lookups.
+    * Updated `RegistrationService.createRegistration`:
+      * Validates attendee question answers against form questions (question existence, question type, single/multiple option validity, character limits: 500 for short text, 2000 for long text, and required question enforcement).
+      * Persists answers into `registration_answers` table in an atomic transaction.
+    * Created comprehensive Vitest test suite `backend/tests/form-persistence.test.ts` (16 test cases) covering unauthenticated 401, non-organizer 403, non-owner 403, validation 400, save/get form 200, event form embedding, missing required answer rejection, and successful answer persistence.
+    * 106/106 Vitest tests passing across all 9 backend test suites.
+  * **Android (Kotlin + XML + Material 3 + Retrofit + Coroutines):**
+    * Updated networking DTOs in `EventModels.kt`: `FormQuestionDto`, `RegistrationFormDto`, `SaveFormRequest`, `SaveFormResponseData`, and added `form: RegistrationFormDto?` to `EventDto`.
+    * Updated registration DTOs in `RegistrationModels.kt`: `RegistrationAnswerDto`, and added `answers: List<RegistrationAnswerDto>` to `CreateRegistrationRequest` and `RegistrationDto`.
+    * Updated domain model `RegistrationData.kt` with `RegistrationAnswerData` and `answers` list.
+    * Added mapping extensions in `OrganizerModels.kt`: `FormQuestion.toDto()` and `FormQuestionDto.toFormQuestion()`, with `EventDto.toOrganizerEvent()` incorporating backend form questions.
+    * Implemented `OrganizerFormRepository` and `OrganizerFormRepositoryImpl` with Moshi parsing, error handling, and exposed in `ProPassApplication.kt`.
+    * Updated `RegistrationRepository`: `createRegistration` now accepts and forwards `answers: List<RegistrationAnswerDto>`.
+    * Connected `FormBuilderActivity.kt`:
+      * On load, queries `organizerFormRepository.getForm(draft.id)` to load existing form questions if available.
+      * On "Preview Form" click, updates button state to "Saving Form...", calls `organizerFormRepository.saveForm(draft.id, dtoList)`, updates local draft with persisted question IDs, and navigates to `FormPreviewActivity`.
+      * Gracefully surfaces errors with Toast if network or validation fails.
+    * Updated `activity_smart_form_registration.xml` and `SmartFormRegistrationActivity.kt`:
+      * Added `sectionDynamicQuestions` and `containerDynamicQuestions` below the Event Details section.
+      * On create, inspects `eventDto?.form` or asynchronously fetches event form from backend via `EventRepository`.
+      * Dynamically renders custom questions (`SHORT_TEXT`, `LONG_TEXT`, `MULTIPLE_CHOICE`, `CHECKBOX`) matching Stitch design styling and ProPass color palettes.
+      * Skips duplicate verified default fields (`Full Name`, `Email Address`).
+      * Validates required dynamic questions inline with error highlights (`bg_field_error`).
+      * Collects dynamic answers into `RegistrationData.answers` and passes them to `ReviewRegistrationActivity`.
+    * Updated `activity_review_registration.xml` and `ReviewRegistrationActivity.kt`:
+      * Added "ADDITIONAL INFORMATION" card (`cardAdditionalDetails`) dynamically displaying answered custom questions.
+      * Submits answers via `registrationRepository.createRegistration(..., answers)`.
+    * Added 6 new unit tests in `OrganizerFormRepositoryTest.kt` with MockWebServer testing `getForm`, `saveForm`, 400 validation, 403 forbidden, 404 not found, and model extensions.
+    * Added unit test in `RegistrationRepositoryTest.kt` verifying answers serialization during registration creation.
+    * 112/112 unit tests passing across 25 suites (`./gradlew testDebugUnitTest`).
+    * Full debug APK assembled cleanly (`./gradlew assembleDebug`).
+    * `git diff --check` clean.
+
+* [x] **Phase 4D: Organizer Registration Management (Completed):**
+  * **Backend (Fastify + Prisma + PostgreSQL):**
+    * Enriched event queries with registration counts: updated `EventService.getEventsByOrganizer` and `getEventByIdOrSlug` with Prisma `_count: { select: { registrations: true } }` returning `registrationCount` efficiently without N+1 queries.
+    * Added input validation schema: `registrationParamsSchema` (`registrationId`) in `registration.schema.ts`.
+    * Extended `RegistrationService`:
+      * `formatRegistrationForOrganizer`: Sanitizes and shapes registration records to expose verified attendee identity snapshot (`fullName`, `email`, `institution`, `phone`, `organization`, `title`, `avatarUrl`), registration metadata (`status`, `purpose`, `durationDays`, `vehicleNumber`, `registeredAt`), and custom `answers` with question metadata (`questionId`, `questionLabel`, `questionType`, `value`, `options`, `orderIndex`, `isDefaultField`). Strictly prevents leakage of password hashes and refresh tokens.
+      * `getEventRegistrationsForOrganizer(eventId, organizerId)`: Validates event existence (404), strictly verifies ownership (`event.organizerId !== organizerId` -> 403), queries registrations ordered newest first (`registeredAt: 'desc'`), and returns safe payload with event details and total count.
+      * `getRegistrationDetailForOrganizer(registrationId, organizerId)`: Finds registration by ID (404), verifies organizer owns the associated event (403), and returns full detail including verified snapshot, metadata, and custom form answers.
+    * Added controller methods in `OrganizerController`: `getEventRegistrations` and `getRegistrationDetails`.
+    * Registered protected routes in `organizer.routes.ts` with `[authenticate, requireRole(UserRole.ORGANIZER)]`:
+      * `GET /api/v1/organizer/events/:eventId/registrations` (200 OK)
+      * `GET /api/v1/organizer/registrations/:registrationId` (200 OK)
+    * Created comprehensive Vitest test suite `backend/tests/organizer-registrations.test.ts` (17 test cases) covering unauthenticated 401, attendee forbidden 403, non-existent event 404, cross-organizer event access 403, empty list 200, multiple registrations with custom answers, newest-first ordering, slug resolution, privacy protection against password hash/token leaks, single registration details 401/403/404, cross-organizer registration detail 403, full registration detail 200, and `registrationCount` in `/organizer/events` and `/events/:eventId`.
+    * 123/123 Vitest tests passing across all 10 backend test suites (`npm test`).
+  * **Android (Kotlin + XML + Material 3 + Retrofit + Coroutines):**
+    * Updated DTOs in `EventModels.kt`: added `registrationCount: Int = 0` to `EventDto`.
+    * Updated `OrganizerModels.kt`: `EventDto.toOrganizerEvent()` maps `attendeeCount = this.registrationCount`.
+    * Created `OrganizerRegistrationModels.kt` containing `OrganizerRegistrationAnswerDto`, `AttendeeSnapshotDto`, `OrganizerRegistrationDto`, `OrganizerRegistrationsResponseData`, and `OrganizerRegistrationDetailResponseData`.
+    * Updated `ProPassApiService.kt` with `getEventRegistrations` and `getRegistrationDetails` endpoints.
+    * Created `OrganizerRegistrationRepository` interface and `OrganizerRegistrationRepositoryImpl` with Moshi JSON parsing, network exception resolution, and error body mapping.
+    * Exposed and initialized `organizerRegistrationRepository` in `ProPassApplication.kt`.
+    * Updated `OrganizerDashboardActivity.kt` and `OrganizerEventAdapter.kt`:
+      * Event card displays real attendee count and configured form field count: `"${event.attendeeCount} registered • ${event.questions.size} form fields"`.
+      * Tapping an event card opens `OrganizerEventDetailActivity`.
+    * Implemented Screen 1: Event Details / Management (`OrganizerEventDetailActivity.kt` + `activity_organizer_event_detail.xml`):
+      * Shows Event Title, Status badge ("PUBLISHED"), Date & Time, Location, Access Duration, and Event Slug.
+      * Registrations Overview card displays real-time registration count badge and primary "View All Registrations" action button.
+      * Quick action buttons to view event QR pass (`EventPublishSuccessActivity`) and view/edit registration form (`FormBuilderActivity`).
+    * Implemented Screen 2: Registration List Screen (`OrganizerRegistrationsActivity.kt` + `activity_organizer_registrations.xml`):
+      * Top bar with back navigation, event subtitle, and total count badge.
+      * Handles loading indicator, error state with retry, empty state when no attendees have registered, and list state with `RecyclerView`.
+      * `OrganizerRegistrationAdapter.kt` and `item_organizer_registration.xml` display Attendee Name, status badge (`CONFIRMED` / `PENDING`), Email, Institution/Organization, Registration Date/Time, Purpose of Visit, Duration, and answer count.
+      * Tapping an item opens `OrganizerRegistrationDetailActivity`.
+    * Implemented Screen 3: Registration Detail Screen (`OrganizerRegistrationDetailActivity.kt` + `activity_organizer_registration_detail.xml`):
+      * Section 1: VERIFIED IDENTITY card displays Verified Identity badge, Attendee Name, Email, Phone (or "Not provided"), Institution / Organization, and Title (if present).
+      * Section 2: REGISTRATION METADATA card displays Status badge, Registered At timestamp, Purpose of Visit, Duration, and Vehicle Number (if provided).
+      * Section 3: CUSTOM FORM RESPONSES card dynamically renders all attendee answers with Question Label, Question Type pill, and Answer Value (cleanly formatted checkboxes, text, or "Not provided" for optional unanswered questions). Fallback for events with no custom questions.
+    * Registered `OrganizerEventDetailActivity`, `OrganizerRegistrationsActivity`, and `OrganizerRegistrationDetailActivity` in `AndroidManifest.xml`.
+    * Added 10 unit tests in `OrganizerRegistrationRepositoryTest.kt` with MockWebServer testing successful registrations list, answers parsing, empty list, 401 unauthorized, 403 cross-organizer forbidden, 404 event not found, 500 server error, 200 registration details, 404 registration not found, 403 cross-organizer registration forbidden, and `registrationCount` mapping.
+    * All Android unit tests passing (`./gradlew testDebugUnitTest`).
+    * Full debug APK cleanly compiled (`./gradlew assembleDebug`).
+    * `git diff --check` clean.
+
 ---
 
 ## 17. Development Roadmap
@@ -625,12 +753,14 @@ All listed features have been executed and verified on physical hardware & devel
 * [x] **Profile & Dashboard Physical-Device Fixes** (Completed)
 * [x] **Organizer UI Phase 1 (Event Creation & Form Builder)** (Completed)
 * [x] **Phase 4A: Role-Based Authentication & Authorization** (Completed)
-* [ ] **Phase 4B: Organizer Backend API Integration (Event Persistence & Form Sync)**
+* [x] **Phase 4B: Real Organizer Event Creation & Persistence** (Completed)
+* [x] **Phase 4C: Real Registration Form Persistence & Attendee Dynamic Rendering** (Completed)
+* [x] **Phase 4D: Organizer Registration Management** (Completed)
 * [ ] **Phase 5: End-to-End Testing & Physical Device Verification**
 
 ---
 
 ## 18. Current Stopping Point
 
-> **Phase 4A (Role-Based Authentication & Authorization) Complete:** Implemented end-to-end role-based authentication and authorization across backend and Android. Backend Prisma schema updated with `enum UserRole { ATTENDEE, ORGANIZER }`, migration deployed, seed organizer account (`organizer@propass.id` / `Organizer123!`) created, JWT tokens include role claim, `requireRole(UserRole.ORGANIZER)` middleware implemented, and protected test endpoint `GET /api/v1/organizer/me` verified. Android models, DataStore `TokenStorage`, and `AuthRepository` updated with role tracking and routing: organizers route to `OrganizerDashboardActivity` upon login/splash, attendees route to `HomeDashboardActivity`, and attendee attempts to access the Organizer Portal are gated with `"Organizer access required."`. 79/79 backend tests and 105/105 Android unit tests passing. Clean `./gradlew assembleDebug` build. Not committed or pushed to Git. Stopping for user review.
+> **Phase 4D (Organizer Registration Management) Complete:** Organizers can now manage and inspect registrations for their events with strict cross-organizer authorization protection. Event cards on the Organizer Dashboard display live registration counts retrieved via PostgreSQL `_count` aggregation. Selecting an event opens the Event Management Hub (`OrganizerEventDetailActivity`), from which the organizer can view the registration list (`OrganizerRegistrationsActivity`). The list shows verified attendee names, emails, institutions, statuses, and answer counts, with full support for loading, empty, and retry states. Tapping any registration opens the Registration Details screen (`OrganizerRegistrationDetailActivity`), presenting the attendee's Verified Identity snapshot, Registration Metadata, and Dynamic Form Responses with formatted question labels, types, and values. 123/123 Vitest backend tests pass across all 10 test suites; all Android unit tests pass across 26 test suites (`./gradlew testDebugUnitTest`); debug APK built cleanly (`./gradlew assembleDebug`); `git diff --check` clean. Not committed or pushed to Git. Stopping for user review.
 > *Updated on: September 7, 2026*

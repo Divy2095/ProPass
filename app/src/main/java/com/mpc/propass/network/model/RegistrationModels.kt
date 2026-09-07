@@ -4,6 +4,14 @@ import com.squareup.moshi.Json
 import java.io.Serializable
 
 /**
+ * Dynamic registration answer submitted by attendee for an organizer-defined form question.
+ */
+data class RegistrationAnswerDto(
+    @field:Json(name = "questionId") val questionId: String,
+    @field:Json(name = "value") val value: String
+) : Serializable
+
+/**
  * Request payload for POST /api/v1/registrations.
  */
 data class CreateRegistrationRequest(
@@ -13,7 +21,8 @@ data class CreateRegistrationRequest(
     @field:Json(name = "institution") val institution: String,
     @field:Json(name = "purpose") val purpose: String,
     @field:Json(name = "durationDays") val durationDays: Int,
-    @field:Json(name = "vehicleNumber") val vehicleNumber: String? = null
+    @field:Json(name = "vehicleNumber") val vehicleNumber: String? = null,
+    @field:Json(name = "answers") val answers: List<RegistrationAnswerDto> = emptyList()
 )
 
 /**
@@ -45,7 +54,8 @@ data class RegistrationDto(
     @field:Json(name = "vehicleNumber") val vehicleNumber: String? = null,
     @field:Json(name = "status") val status: String = "CONFIRMED",
     @field:Json(name = "registeredAt") val registeredAt: String = "",
-    @field:Json(name = "event") val event: RegistrationEventDto? = null
+    @field:Json(name = "event") val event: RegistrationEventDto? = null,
+    @field:Json(name = "answers") val answers: List<RegistrationAnswerDto> = emptyList()
 ) : Serializable
 
 /**

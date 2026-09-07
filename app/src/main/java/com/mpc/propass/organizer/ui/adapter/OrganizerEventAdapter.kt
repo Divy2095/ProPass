@@ -51,7 +51,8 @@ class OrganizerEventAdapter(
             tvEventStatus.text = event.status
 
             val qCount = event.questions.size
-            tvQuestionCount.text = "$qCount form fields configured"
+            val regCount = event.attendeeCount
+            tvQuestionCount.text = "$regCount registered • $qCount form fields"
 
             cardEventItem.setOnClickListener {
                 onEventClick(event)

@@ -23,6 +23,7 @@ import com.mpc.propass.data.repository.DuplicateRegistrationException
 import com.mpc.propass.data.repository.RegistrationAuthException
 import com.mpc.propass.data.repository.RegistrationRepository
 import com.mpc.propass.data.repository.RegistrationValidationException
+import com.mpc.propass.network.model.RegistrationAnswerDto
 import com.mpc.propass.network.model.RegistrationPurposeMapper
 import kotlinx.coroutines.launch
 
@@ -56,6 +57,9 @@ class ReviewRegistrationActivity : AppCompatActivity() {
     private lateinit var tvReviewPurpose: TextView
     private lateinit var tvReviewDuration: TextView
     private lateinit var tvReviewVehicle: TextView
+
+    private lateinit var cardAdditionalDetails: View
+    private lateinit var layoutDynamicAnswers: LinearLayout
 
     private lateinit var btnEditBack: MaterialButton
     private lateinit var btnSubmitRegistration: MaterialButton
@@ -95,6 +99,9 @@ class ReviewRegistrationActivity : AppCompatActivity() {
         tvReviewPurpose = findViewById(R.id.tvReviewPurpose)
         tvReviewDuration = findViewById(R.id.tvReviewDuration)
         tvReviewVehicle = findViewById(R.id.tvReviewVehicle)
+
+        cardAdditionalDetails = findViewById(R.id.cardAdditionalDetails)
+        layoutDynamicAnswers = findViewById(R.id.layoutDynamicAnswers)
 
         btnEditBack = findViewById(R.id.btnEditBack)
         btnSubmitRegistration = findViewById(R.id.btnSubmitRegistration)
@@ -157,6 +164,60 @@ class ReviewRegistrationActivity : AppCompatActivity() {
         tvReviewPurpose.text = data.purpose
         tvReviewDuration.text = if (data.durationDays == 1) "1 day" else "${data.durationDays} days"
         tvReviewVehicle.text = data.vehicleNumber.takeIf { !it.isNullOrBlank() } ?: getString(R.string.review_vehicle_not_provided)
+
+        if (data.answers.isNotEmpty()) {
+            cardAdditionalDetails.visibility = View.VISIBLE
+            layoutDynamicAnswers.removeAllViews()
+            data.answers.forEachIndexed { index, ans ->
+                val rowLayout = LinearLayout(this).apply {
+                    orientation = LinearLayout.VERTICAL
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    )
+                }
+
+                val tvLabel = TextView(this).apply {
+                    text = ans.questionLabel
+                    setTextColor(androidx.core.content.ContextCompat.getColor(this@ReviewRegistrationActivity, R.color.secondary))
+                    textSize = 12f
+                }
+                rowLayout.addView(tvLabel)
+
+                val tvValue = TextView(this).apply {
+                    text = ans.value.ifBlank { "—" }
+                    setTextColor(androidx.core.content.ContextCompat.getColor(this@ReviewRegistrationActivity, R.color.on_surface))
+                    textSize = 15f
+                    val params = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).apply {
+                        topMargin = dpToPx(2f).toInt()
+                    }
+                    layoutParams = params
+                }
+                rowLayout.addView(tvValue)
+
+                layoutDynamicAnswers.addView(rowLayout)
+
+                if (index < data.answers.size - 1) {
+                    val divider = View(this).apply {
+                        val params = LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.MATCH_PARENT,
+                            dpToPx(1f).toInt()
+                        ).apply {
+                            topMargin = dpToPx(12f).toInt()
+                            bottomMargin = dpToPx(12f).toInt()
+                        }
+                        layoutParams = params
+                        setBackgroundColor(androidx.core.content.ContextCompat.getColor(this@ReviewRegistrationActivity, R.color.outline_variant))
+                    }
+                    layoutDynamicAnswers.addView(divider)
+                }
+            }
+        } else {
+            cardAdditionalDetails.visibility = View.GONE
+        }
     }
 
     private fun setupInteractions() {
@@ -200,6 +261,7 @@ class ReviewRegistrationActivity : AppCompatActivity() {
 
             lifecycleScope.launch {
                 val backendPurpose = RegistrationPurposeMapper.toBackendPurpose(data.purpose)
+                val answerDtos = data.answers.map { RegistrationAnswerDto(it.questionId, it.value) }
                 val result = registrationRepository.createRegistration(
                     eventId = data.eventId,
                     fullName = data.fullName,
@@ -207,7 +269,8 @@ class ReviewRegistrationActivity : AppCompatActivity() {
                     institution = data.institution,
                     purpose = backendPurpose,
                     durationDays = data.durationDays,
-                    vehicleNumber = data.vehicleNumber
+                    vehicleNumber = data.vehicleNumber,
+                    answers = answerDtos
                 )
 
                 result.onSuccess { responseData ->
@@ -221,7 +284,8 @@ class ReviewRegistrationActivity : AppCompatActivity() {
                         institution = reg.institution,
                         purpose = RegistrationPurposeMapper.toFriendlyDisplay(reg.purpose),
                         durationDays = reg.durationDays,
-                        vehicleNumber = reg.vehicleNumber
+                        vehicleNumber = reg.vehicleNumber,
+                        answers = data.answers
                     )
 
                     val intent = Intent(this@ReviewRegistrationActivity, RegistrationSuccessActivity::class.java).apply {

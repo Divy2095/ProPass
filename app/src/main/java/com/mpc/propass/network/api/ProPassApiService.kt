@@ -104,4 +104,45 @@ interface ProPassApiService {
 
     @GET("api/v1/passes/me")
     suspend fun getMyDigitalPass(): Response<ApiResponse<com.mpc.propass.network.model.MyPassResponseData>>
+
+    // ==========================================
+    // Organizer Events (Phase 4B)
+    // ==========================================
+
+    @POST("api/v1/events")
+    suspend fun createEvent(
+        @Body request: com.mpc.propass.network.model.CreateEventRequest
+    ): Response<ApiResponse<com.mpc.propass.network.model.CreateEventResponseData>>
+
+    @GET("api/v1/organizer/events")
+    suspend fun getOrganizerEvents(): Response<ApiResponse<com.mpc.propass.network.model.OrganizerEventsResponseData>>
+
+    // ==========================================
+    // Registration Form Persistence (Phase 4C)
+    // ==========================================
+
+    @GET("api/v1/events/{eventId}/form")
+    suspend fun getEventForm(
+        @retrofit2.http.Path("eventId") eventId: String
+    ): Response<ApiResponse<com.mpc.propass.network.model.SaveFormResponseData>>
+
+    @retrofit2.http.PUT("api/v1/events/{eventId}/form")
+    suspend fun saveEventForm(
+        @retrofit2.http.Path("eventId") eventId: String,
+        @Body request: com.mpc.propass.network.model.SaveFormRequest
+    ): Response<ApiResponse<com.mpc.propass.network.model.SaveFormResponseData>>
+
+    // ==========================================
+    // Organizer Registrations (Phase 4D)
+    // ==========================================
+
+    @GET("api/v1/organizer/events/{eventId}/registrations")
+    suspend fun getEventRegistrations(
+        @Path("eventId") eventId: String
+    ): Response<ApiResponse<com.mpc.propass.organizer.model.OrganizerRegistrationsResponseData>>
+
+    @GET("api/v1/organizer/registrations/{registrationId}")
+    suspend fun getRegistrationDetails(
+        @Path("registrationId") registrationId: String
+    ): Response<ApiResponse<com.mpc.propass.organizer.model.OrganizerRegistrationDetailResponseData>>
 }

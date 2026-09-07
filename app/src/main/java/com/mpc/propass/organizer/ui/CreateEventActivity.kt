@@ -6,16 +6,24 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.ImageButton
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
+import com.mpc.propass.ProPassApplication
 import com.mpc.propass.R
+import com.mpc.propass.network.model.CreateEventRequest
+import com.mpc.propass.organizer.data.OrganizerEventRepository
+import com.mpc.propass.organizer.data.OrganizerEventRepositoryImpl
+import com.mpc.propass.organizer.data.OrganizerEventStore
 import com.mpc.propass.organizer.model.OrganizerEventDraft
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -211,20 +219,54 @@ class CreateEventActivity : AppCompatActivity() {
 
         if (!isValid) return
 
-        val draft = OrganizerEventDraft(
+        btnContinueToBuilder.isEnabled = false
+        btnContinueToBuilder.text = "Creating Event..."
+
+        val repo: OrganizerEventRepository = (application as? ProPassApplication)?.organizerEventRepository
+            ?: OrganizerEventRepositoryImpl()
+
+        val request = CreateEventRequest(
             name = name,
-            description = desc,
+            description = desc.ifBlank { null },
             date = date,
-            startTime = startTime,
-            endTime = endTime,
+            startTime = startTime.ifBlank { null },
+            endTime = endTime.ifBlank { null },
             location = location,
-            maxDurationDays = duration
+            maxDuration = duration
         )
 
-        val intent = Intent(this, FormBuilderActivity::class.java).apply {
-            putExtra(FormBuilderActivity.EXTRA_DRAFT, draft)
+        lifecycleScope.launch {
+            val result = repo.createEvent(request)
+            btnContinueToBuilder.isEnabled = true
+            btnContinueToBuilder.setText(R.string.btn_continue_form_builder)
+
+            result.onSuccess { createdEvent ->
+                val draft = OrganizerEventDraft(
+                    id = createdEvent.id,
+                    slug = createdEvent.slug,
+                    name = createdEvent.title,
+                    description = createdEvent.description ?: desc,
+                    date = createdEvent.date ?: date,
+                    startTime = createdEvent.startTime ?: startTime,
+                    endTime = createdEvent.endTime ?: endTime,
+                    location = createdEvent.location,
+                    maxDurationDays = createdEvent.maxDuration,
+                    qrPayload = createdEvent.qrPayload ?: "https://propass.id/event/${createdEvent.slug}"
+                )
+                OrganizerEventStore.saveEvent(draft.toPublishedEvent())
+
+                val intent = Intent(this@CreateEventActivity, FormBuilderActivity::class.java).apply {
+                    putExtra(FormBuilderActivity.EXTRA_DRAFT, draft)
+                }
+                startActivity(intent)
+            }.onFailure { error ->
+                Toast.makeText(
+                    this@CreateEventActivity,
+                    error.message ?: "Failed to create event",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
         }
-        startActivity(intent)
     }
 
     private fun Int.dpToPx(): Int = (this * resources.displayMetrics.density).toInt()
