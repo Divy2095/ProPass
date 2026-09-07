@@ -115,6 +115,44 @@
             android:theme="@style/Theme.ProPass"
             tools:ignore="LockedOrientationActivity" />
 
+        <!-- Organizer Portal Flow -->
+        <activity
+            android:name=".organizer.ui.OrganizerDashboardActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.ProPass"
+            tools:ignore="LockedOrientationActivity" />
+
+        <activity
+            android:name=".organizer.ui.CreateEventActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.ProPass"
+            android:windowSoftInputMode="adjustResize"
+            tools:ignore="LockedOrientationActivity" />
+
+        <activity
+            android:name=".organizer.ui.FormBuilderActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.ProPass"
+            android:windowSoftInputMode="adjustResize"
+            tools:ignore="LockedOrientationActivity" />
+
+        <activity
+            android:name=".organizer.ui.FormPreviewActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.ProPass"
+            tools:ignore="LockedOrientationActivity" />
+
+        <activity
+            android:name=".organizer.ui.EventPublishSuccessActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.ProPass"
+            tools:ignore="LockedOrientationActivity" />
+
     </application>
 
 </manifest>

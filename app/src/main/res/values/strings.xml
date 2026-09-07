@@ -204,4 +204,68 @@
     <string name="error_no_active_pass">No active digital pass found for this user account</string>
     <string name="error_pass_load_failed">Failed to load digital pass</string>
     <string name="error_auth_required">Authentication required. Please sign in again.</string>
+
+    <!-- Phase 4 Organizer UI Strings -->
+    <string name="organizer_portal_title">Organizer Portal</string>
+    <string name="organizer_dashboard_title">Organizer Dashboard</string>
+    <string name="organizer_mode_subtitle">Manage events &amp; registration forms</string>
+    <string name="organizer_empty_title">No events created yet</string>
+    <string name="organizer_empty_desc">Create your first event to build custom registration forms and generate attendee QR codes.</string>
+    <string name="btn_create_event">Create Event</string>
+    <string name="btn_create_first_event">Create Your First Event</string>
+    <string name="organizer_switch_to_attendee">Switch to Attendee</string>
+    <string name="organizer_switch_to_organizer">Switch to Organizer Mode</string>
+    <string name="organizer_event_active">Active</string>
+    <string name="organizer_event_published">Published</string>
+    <string name="organizer_event_questions_count">%1$d form fields</string>
+
+    <string name="create_event_title">Create Event</string>
+    <string name="create_event_subtitle">Basic event details and scheduling</string>
+    <string name="label_event_name">Event Name</string>
+    <string name="hint_event_name">e.g. Google I/O Extended 2026</string>
+    <string name="label_event_desc">Description</string>
+    <string name="hint_event_desc">Brief overview of your event, keynote speakers, and tracks.</string>
+    <string name="label_event_date">Event Date</string>
+    <string name="hint_event_date">YYYY-MM-DD</string>
+    <string name="label_start_time">Start Time</string>
+    <string name="hint_start_time">e.g. 09:00 AM</string>
+    <string name="label_end_time">End Time</string>
+    <string name="hint_end_time">e.g. 06:00 PM</string>
+    <string name="label_event_location">Location / Venue</string>
+    <string name="hint_event_location">e.g. Moscone Center, San Francisco, CA</string>
+    <string name="label_max_duration">Maximum Duration (Days)</string>
+    <string name="hint_max_duration">1</string>
+    <string name="btn_continue_form_builder">Continue to Form Builder</string>
+    <string name="error_event_name_required">Event name is required</string>
+    <string name="error_event_date_required">Event date is required</string>
+    <string name="error_event_location_required">Event location is required</string>
+    <string name="error_event_duration_invalid">Duration must be at least 1 day</string>
+
+    <string name="form_builder_title">Form Builder</string>
+    <string name="form_builder_subtitle">Customize the registration fields for your attendees</string>
+    <string name="form_builder_default_section">Default Identity Fields</string>
+    <string name="form_builder_default_desc">Auto-filled from verified ProPass profiles.</string>
+    <string name="form_builder_custom_section">Custom Questions</string>
+    <string name="form_builder_no_custom">No custom questions added yet. Attendees will only be asked for default fields.</string>
+    <string name="btn_add_question">Add Question</string>
+    <string name="dialog_add_question_title">Add Custom Question</string>
+    <string name="dialog_edit_question_title">Edit Question</string>
+    <string name="label_question_text">Question / Field Label</string>
+    <string name="hint_question_text">e.g. Dietary Requirements, T-Shirt Size, GitHub Profile</string>
+    <string name="label_question_type">Field Type</string>
+    <string name="label_question_options">Options (comma-separated)</string>
+    <string name="hint_question_options">e.g. Vegetarian, Vegan, Halal, None</string>
+    <string name="label_question_required">Mark as Required</string>
+    <string name="btn_preview_form">Preview Form</string>
+
+    <string name="form_preview_title">Form Preview</string>
+    <string name="form_preview_badge">Attendee Preview Mode</string>
+    <string name="btn_edit_form">Back to Builder</string>
+    <string name="btn_publish_event">Publish Event</string>
+
+    <string name="publish_success_title">Event Published!</string>
+    <string name="publish_success_desc">Your event is live in local organizer session. Attendees can scan the code below to register.</string>
+    <string name="publish_mock_badge">Local Demo State • Saved locally</string>
+    <string name="btn_view_dashboard">Back to Organizer Dashboard</string>
+    <string name="qr_scan_caption">Scan QR code with ProPass Scanner</string>
 </resources>

@@ -422,6 +422,23 @@
                     app:iconPadding="8dp" />
 
                 <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnOrganizerPortal"
+                    style="@style/Widget.MaterialComponents.Button"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:layout_marginBottom="12dp"
+                    android:backgroundTint="@color/surface_container_high"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:text="@string/organizer_switch_to_organizer"
+                    android:textColor="@color/primary"
+                    app:cornerRadius="12dp"
+                    app:icon="@drawable/ic_business"
+                    app:iconGravity="textStart"
+                    app:iconPadding="8dp"
+                    app:iconTint="@color/primary" />
+
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnLogout"
                     style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                     android:layout_width="match_parent"

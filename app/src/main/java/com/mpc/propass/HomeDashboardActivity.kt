@@ -75,6 +75,9 @@ class HomeDashboardActivity : AppCompatActivity() {
     private lateinit var progressCircle: CircularProgressView
     private lateinit var tvProgressPercent: TextView
 
+    // Organizer Portal card
+    private lateinit var cardOrganizerPortal: MaterialCardView
+
     // Recent Activity items
     private lateinit var itemActivity1: MaterialCardView
     private lateinit var tvActivity1Title: TextView
@@ -148,6 +151,9 @@ class HomeDashboardActivity : AppCompatActivity() {
         btnAddDetails = findViewById(R.id.btnAddDetails)
         progressCircle = findViewById(R.id.progressCircle)
         tvProgressPercent = findViewById(R.id.tvProgressPercent)
+
+        // Organizer Portal
+        cardOrganizerPortal = findViewById(R.id.cardOrganizerPortal)
 
         // Recent Activity
         itemActivity1 = findViewById(R.id.itemActivity1)
@@ -388,6 +394,13 @@ class HomeDashboardActivity : AppCompatActivity() {
         btnAddDetails.setOnTouchListener(touchListener95)
         btnAddDetails.setOnClickListener {
             openEditProfileDialog()
+        }
+
+        // Organizer Portal flow
+        cardOrganizerPortal.setOnTouchListener(touchListener98)
+        cardOrganizerPortal.setOnClickListener {
+            val intent = Intent(this, com.mpc.propass.organizer.ui.OrganizerDashboardActivity::class.java)
+            startActivity(intent)
         }
 
         itemActivity1.setOnTouchListener(touchListener98)

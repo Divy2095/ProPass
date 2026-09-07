@@ -68,6 +68,7 @@ class ProfileActivity : AppCompatActivity() {
 
     // Action buttons
     private lateinit var btnEditProfile: MaterialButton
+    private lateinit var btnOrganizerPortal: MaterialButton
     private lateinit var btnLogout: MaterialButton
 
     // Bottom Navigation tabs
@@ -142,6 +143,7 @@ class ProfileActivity : AppCompatActivity() {
 
         // Action buttons
         btnEditProfile = findViewById(R.id.btnEditProfile)
+        btnOrganizerPortal = findViewById(R.id.btnOrganizerPortal)
         btnLogout = findViewById(R.id.btnLogout)
 
         // Bottom Navigation
@@ -203,6 +205,12 @@ class ProfileActivity : AppCompatActivity() {
         btnLogout.setOnTouchListener(touchListener95)
         btnLogout.setOnClickListener {
             performLogout()
+        }
+
+        btnOrganizerPortal.setOnTouchListener(touchListener95)
+        btnOrganizerPortal.setOnClickListener {
+            val intent = Intent(this, com.mpc.propass.organizer.ui.OrganizerDashboardActivity::class.java)
+            startActivity(intent)
         }
 
         // Bottom Navigation
