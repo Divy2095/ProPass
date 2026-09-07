@@ -24,6 +24,7 @@ class TokenStorageTest {
         assertNull(tokenStorage.getRefreshToken())
         assertNull(tokenStorage.getUserId())
         assertNull(tokenStorage.getUserEmail())
+        assertNull(tokenStorage.getUserRole())
         assertFalse(tokenStorage.isAuthenticatedFlow.first())
     }
 
@@ -39,17 +40,19 @@ class TokenStorageTest {
     }
 
     @Test
-    fun testSaveUserUpdatesCache() = runBlocking {
-        tokenStorage.saveUser("user-id-001", "alex.morgan@example.com", "USER")
+    fun testSaveUserUpdatesCacheAndRole() = runBlocking {
+        tokenStorage.saveUser("user-id-001", "alex.morgan@example.com", "ORGANIZER")
 
         assertEquals("user-id-001", tokenStorage.getUserId())
         assertEquals("alex.morgan@example.com", tokenStorage.getUserEmail())
+        assertEquals("ORGANIZER", tokenStorage.getUserRole())
+        assertEquals("ORGANIZER", tokenStorage.userRoleFlow.first())
     }
 
     @Test
     fun testClearRemovesAllCredentials() = runBlocking {
         tokenStorage.saveTokens("access-123", "refresh-456")
-        tokenStorage.saveUser("user-id-001", "alex.morgan@example.com", "USER")
+        tokenStorage.saveUser("user-id-001", "alex.morgan@example.com", "ORGANIZER")
 
         tokenStorage.clear()
 
@@ -57,6 +60,7 @@ class TokenStorageTest {
         assertNull(tokenStorage.getRefreshToken())
         assertNull(tokenStorage.getUserId())
         assertNull(tokenStorage.getUserEmail())
+        assertNull(tokenStorage.getUserRole())
         assertFalse(tokenStorage.isAuthenticatedFlow.first())
     }
 }

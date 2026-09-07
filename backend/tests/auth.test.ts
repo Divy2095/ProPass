@@ -49,6 +49,7 @@ describe('Authentication API (Phase 2A)', () => {
       expect(body.success).toBe(true);
       expect(body.data.user.email).toBe(testUser.email);
       expect(body.data.user.id).toBeDefined();
+      expect(body.data.user.role).toBe('ATTENDEE');
       expect(body.data.user.passwordHash).toBeUndefined(); // Security check
       expect(body.data.tokens.accessToken).toBeDefined();
       expect(body.data.tokens.refreshToken).toBeDefined();
@@ -63,6 +64,32 @@ describe('Authentication API (Phase 2A)', () => {
       expect(dbUser?.passwordHash?.startsWith('$argon2')).toBe(true);
       const isArgon2Valid = await verifyPassword(testUser.password, dbUser!.passwordHash!);
       expect(isArgon2Valid).toBe(true);
+      expect(dbUser?.role).toBe('ATTENDEE');
+    });
+
+    it('should ignore client-supplied role and always create ATTENDEE', async () => {
+      const spoofEmail = 'spoofed.role@propass.id';
+      await prisma.user.deleteMany({ where: { email: spoofEmail } });
+
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/v1/auth/register',
+        payload: {
+          email: spoofEmail,
+          password: 'Password123!',
+          role: 'ORGANIZER',
+        },
+      });
+
+      expect(res.statusCode).toBe(201);
+      const body = JSON.parse(res.body);
+      expect(body.success).toBe(true);
+      expect(body.data.user.role).toBe('ATTENDEE');
+
+      const dbUser = await prisma.user.findUnique({ where: { email: spoofEmail } });
+      expect(dbUser?.role).toBe('ATTENDEE');
+
+      await prisma.user.deleteMany({ where: { email: spoofEmail } });
     });
 
     it('should reject registration with duplicate email (409 Conflict)', async () => {
@@ -130,6 +157,7 @@ describe('Authentication API (Phase 2A)', () => {
 
       expect(body.success).toBe(true);
       expect(body.data.user.email).toBe(testUser.email);
+      expect(body.data.user.role).toBe('ATTENDEE');
       expect(body.data.user.passwordHash).toBeUndefined(); // Security check
       expect(body.data.tokens.accessToken).toBeDefined();
       expect(body.data.tokens.refreshToken).toBeDefined();
@@ -195,6 +223,7 @@ describe('Authentication API (Phase 2A)', () => {
       const body = JSON.parse(res.body);
       expect(body.success).toBe(true);
       expect(body.data.user.email).toBe(testUser.email);
+      expect(body.data.user.role).toBe('ATTENDEE');
     });
 
     it('should reject request without Authorization header (401 Unauthorized)', async () => {
@@ -225,7 +254,7 @@ describe('Authentication API (Phase 2A)', () => {
     it('should reject request with expired JWT token (401 Unauthorized)', async () => {
       // Create an immediately expired token with same secret
       const expiredToken = jwt.sign(
-        { userId: 'test-user-id', email: testUser.email, role: 'USER', type: 'access' },
+        { userId: 'test-user-id', email: testUser.email, role: 'ATTENDEE', type: 'access' },
         env.JWT_SECRET,
         { expiresIn: '-10s' }
       );

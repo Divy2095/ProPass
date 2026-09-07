@@ -24,7 +24,9 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
             android:hint="@string/label_question_text"
-            app:errorEnabled="true">
+            app:errorEnabled="true"
+            app:errorTextColor="@color/error"
+            app:hintTextColor="@color/primary">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/etQuestionLabel"
@@ -32,7 +34,10 @@
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/inter_regular"
                 android:inputType="textCapSentences"
-                android:textColor="@color/on_surface" />
+                android:textColor="@color/on_surface"
+                android:textColorHighlight="@color/secondary_container"
+                android:textColorHint="@color/on_surface_variant"
+                android:textCursorDrawable="@null" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <!-- Question Type Selection -->
@@ -102,8 +107,11 @@
             android:hint="@string/label_question_options"
             android:visibility="gone"
             app:errorEnabled="true"
+            app:errorTextColor="@color/error"
             app:helperText="Separate multiple choices with commas"
+            app:helperTextTextColor="@color/on_surface_variant"
             app:helperTextEnabled="true"
+            app:hintTextColor="@color/primary"
             tools:visibility="visible">
 
             <com.google.android.material.textfield.TextInputEditText
@@ -112,7 +120,10 @@
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/inter_regular"
                 android:inputType="textCapWords"
-                android:textColor="@color/on_surface" />
+                android:textColor="@color/on_surface"
+                android:textColorHighlight="@color/secondary_container"
+                android:textColorHint="@color/on_surface_variant"
+                android:textCursorDrawable="@null" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <!-- Required Switch / Checkbox -->

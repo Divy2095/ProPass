@@ -399,8 +399,14 @@ class HomeDashboardActivity : AppCompatActivity() {
         // Organizer Portal flow
         cardOrganizerPortal.setOnTouchListener(touchListener98)
         cardOrganizerPortal.setOnClickListener {
-            val intent = Intent(this, com.mpc.propass.organizer.ui.OrganizerDashboardActivity::class.java)
-            startActivity(intent)
+            val authRepo = (application as? ProPassApplication)?.authRepository
+            val isUserOrganizer = cachedUser?.isOrganizer == true || authRepo?.isOrganizer() == true
+            if (isUserOrganizer) {
+                val intent = Intent(this, com.mpc.propass.organizer.ui.OrganizerDashboardActivity::class.java)
+                startActivity(intent)
+            } else {
+                Toast.makeText(this, "Organizer access required.", Toast.LENGTH_SHORT).show()
+            }
         }
 
         itemActivity1.setOnTouchListener(touchListener98)

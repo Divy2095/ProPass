@@ -209,7 +209,11 @@ class SplashActivity : AppCompatActivity() {
             if (!isFinishing && !isDestroyed) {
                 val authRepository = (application as? ProPassApplication)?.authRepository
                 val targetActivity = if (authRepository?.hasActiveSession() == true) {
-                    HomeDashboardActivity::class.java
+                    if (authRepository.isOrganizer()) {
+                        com.mpc.propass.organizer.ui.OrganizerDashboardActivity::class.java
+                    } else {
+                        HomeDashboardActivity::class.java
+                    }
                 } else {
                     LoginActivity::class.java
                 }

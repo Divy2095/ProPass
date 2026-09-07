@@ -1,4 +1,4 @@
-import { Role } from '@prisma/client';
+import { UserRole } from '@prisma/client';
 import { env } from '../config/env.js';
 import { prisma } from '../config/prisma.js';
 import { LoginInput, RegisterInput } from '../models/auth.schema.js';
@@ -9,7 +9,7 @@ export interface AuthResponse {
   user: {
     id: string;
     email: string;
-    role: Role;
+    role: UserRole;
     createdAt: Date;
   };
   tokens: {
@@ -30,6 +30,7 @@ export interface RefreshResponse {
 export class AuthService {
   /**
    * Registers a new user with email and hashed password.
+   * Normal user registration always creates ATTENDEE role.
    */
   static async register(input: RegisterInput): Promise<AuthResponse> {
     const normalizedEmail = input.email.trim().toLowerCase();
@@ -48,12 +49,12 @@ export class AuthService {
     // Hash password with Argon2
     const passwordHash = await hashPassword(input.password);
 
-    // Create user in PostgreSQL
+    // Create user in PostgreSQL with forced ATTENDEE role
     const user = await prisma.user.create({
       data: {
         email: normalizedEmail,
         passwordHash,
-        role: input.role || Role.USER,
+        role: UserRole.ATTENDEE,
       },
       select: {
         id: true,

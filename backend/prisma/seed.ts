@@ -1,4 +1,5 @@
-import { PrismaClient, PurposeOfVisit, RegistrationStatus, Role } from '@prisma/client';
+import { PrismaClient, PurposeOfVisit, RegistrationStatus, UserRole } from '@prisma/client';
+import { hashPassword } from '../src/utils/crypto.js';
 
 const prisma = new PrismaClient();
 
@@ -55,10 +56,14 @@ async function main() {
   }
 
   // 2. Seed Demo Users & Profiles
+  const defaultPasswordHash = await hashPassword('Password123!');
+  const organizerPasswordHash = await hashPassword('Organizer123!');
+
   const demoUsers = [
     {
       email: 'alex.morgan@example.com',
-      role: Role.USER,
+      passwordHash: defaultPasswordHash,
+      role: UserRole.ATTENDEE,
       profile: {
         fullName: 'Alex Morgan',
         title: 'Software Engineer',
@@ -76,7 +81,8 @@ async function main() {
     },
     {
       email: 'sarah.jenkins@example.com',
-      role: Role.USER,
+      passwordHash: defaultPasswordHash,
+      role: UserRole.ATTENDEE,
       profile: {
         fullName: 'Sarah Jenkins',
         title: 'Senior UX Researcher',
@@ -94,7 +100,8 @@ async function main() {
     },
     {
       email: 'elena.rodriguez@example.com',
-      role: Role.USER,
+      passwordHash: defaultPasswordHash,
+      role: UserRole.ATTENDEE,
       profile: {
         fullName: 'Elena Rodriguez',
         title: 'Lead Product Designer',
@@ -110,6 +117,25 @@ async function main() {
         tier: 'PREMIUM',
       },
     },
+    {
+      email: 'organizer@propass.id',
+      passwordHash: organizerPasswordHash,
+      role: UserRole.ORGANIZER,
+      profile: {
+        fullName: 'Dev Organizer',
+        title: 'Lead Event Organizer',
+        organization: 'ProPass Events',
+        phone: '+1 (555) 019-9999',
+        linkedinUrl: 'https://linkedin.com/in/propass-organizer',
+        isVerified: true,
+        completionScore: 100,
+      },
+      pass: {
+        passNumber: 'PP-2024-9001',
+        qrPayload: 'propass:pass:PP-2024-9001',
+        tier: 'ORGANIZER',
+      },
+    },
   ];
 
   for (const demo of demoUsers) {
@@ -117,9 +143,11 @@ async function main() {
       where: { email: demo.email },
       update: {
         role: demo.role,
+        passwordHash: demo.passwordHash,
       },
       create: {
         email: demo.email,
+        passwordHash: demo.passwordHash,
         role: demo.role,
       },
     });
@@ -148,7 +176,7 @@ async function main() {
       },
     });
 
-    console.log(`  ✓ Demo User ready: ${demo.profile.fullName} (${demo.email})`);
+    console.log(`  ✓ Demo User ready: ${demo.profile.fullName} (${demo.email} - ${demo.role})`);
   }
 
   // 3. Seed Sample Registration (Sarah Jenkins -> TechConf 2024)

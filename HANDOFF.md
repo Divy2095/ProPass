@@ -318,19 +318,21 @@ From [`gradle/libs.versions.toml`](file:///home/divy/AndroidProjects/ProPass/gra
 * `src/controllers/event.controller.ts` — Event & QR validation controller (GetEvent, ValidateQr).
 * `src/controllers/registration.controller.ts` — Event registration controller (CreateRegistration, GetMyRegistrations).
 * `src/controllers/pass.controller.ts` — Digital Pass controller (GetMyPass).
-* `src/services/auth.service.ts` — Authentication service with Argon2 hashing and token rotation.
+* `src/controllers/organizer.controller.ts` — Organizer check and profile controller (`GetMe`).
+* `src/services/auth.service.ts` — Authentication service with Argon2 hashing, role assignment, and token rotation.
 * `src/services/user.service.ts` — User Profile management, completion score calculation, and aggregated Dashboard service.
 * `src/services/event.service.ts` — ProPass QR regex parser, event metadata retrieval, and active event validator.
 * `src/services/registration.service.ts` — Event registration persistence, max duration validation, duplicate prevention, and snapshot management.
 * `src/services/pass.service.ts` — Digital Pass retrieval, active/expiration calculation, and profile association service.
 * `src/middleware/auth.middleware.ts` — Fastify JWT authentication guard decorator (`authenticate`).
+* `src/middleware/role.middleware.ts` — Fastify role-based authorization guard hook (`requireRole(UserRole.ORGANIZER)`).
 * `src/models/auth.schema.ts` — Zod validation schemas for registration, login, and refresh.
 * `src/models/user.schema.ts` — Zod validation schemas for profile updates.
 * `src/models/event.schema.ts` — Zod validation schemas for QR validation (`validateQrSchema`) and event params (`eventParamsSchema`).
 * `src/models/registration.schema.ts` — Zod validation schema for event registrations (`createRegistrationSchema`).
 * `src/models/pass.schema.ts` — Digital Pass DTO definitions (`DigitalPassDto`, `PassHolderDto`, `MyPassResponse`).
 * `src/utils/crypto.ts` — Argon2id password hashing, verification, secure token generation, and SHA-256 token hashing.
-* `src/utils/jwt.ts` — JWT access token generation and verification.
+* `src/utils/jwt.ts` — JWT access token generation and verification with `role` claim.
 * `src/routes/health.routes.ts` — Health check endpoint routes (`/health`, `/api/health`).
 * `src/routes/auth.routes.ts` — Authentication routes (`/api/v1/auth/register`, `/login`, `/refresh`, `/logout`, `/me`).
 * `src/routes/user.routes.ts` — User profile routes (`/api/v1/users/profile`).
@@ -338,14 +340,16 @@ From [`gradle/libs.versions.toml`](file:///home/divy/AndroidProjects/ProPass/gra
 * `src/routes/event.routes.ts` — Event routes (`/api/v1/events/:eventId`, `/api/v1/events/validate-qr`).
 * `src/routes/registration.routes.ts` — Registration routes (`/api/v1/registrations`, `/api/v1/registrations/my`).
 * `src/routes/pass.routes.ts` — Digital Pass routes (`/api/v1/passes/me`).
-* `prisma/schema.prisma` — PostgreSQL database schema (User, Profile, DigitalPass, Event, Registration, RefreshToken).
-* `prisma/seed.ts` — Database seeder (TechConf 2024, Google Office Visit, Android Conf 2026, and demo accounts).
+* `src/routes/organizer.routes.ts` — Protected Organizer routes (`/api/v1/organizer/me`).
+* `prisma/schema.prisma` — PostgreSQL database schema (`UserRole` enum, User, Profile, DigitalPass, Event, Registration, RefreshToken).
+* `prisma/seed.ts` — Database seeder (Events, demo attendees, and dev organizer account `organizer@propass.id`).
 * `tests/health.test.ts` — Vitest integration tests for API foundation (2 tests passed).
-* `tests/auth.test.ts` — Vitest test suite for Authentication (14 test cases).
+* `tests/auth.test.ts` — Vitest test suite for Authentication & role default (15 test cases).
 * `tests/user.test.ts` — Vitest test suite for User Profile & Dashboard (8 test cases).
 * `tests/event.test.ts` — Vitest test suite for Event catalog & QR validation (18 test cases).
 * `tests/registration.test.ts` — Vitest test suite for Event Registration (20 test cases).
 * `tests/pass.test.ts` — Vitest test suite for Digital Pass (10 test cases).
+* `tests/organizer-auth.test.ts` — Vitest test suite for Role-Based Authorization & Organizer access (6 test cases).
 * `docker-compose.yml` — PostgreSQL 16 Alpine container with persistent volume.
 * `Dockerfile` — Multi-stage production container build for Node.js backend.
 
@@ -383,13 +387,14 @@ From [`gradle/libs.versions.toml`](file:///home/divy/AndroidProjects/ProPass/gra
 * `app/src/test/java/com/mpc/propass/network/interceptor/DataStoreTokenProviderTest.kt` — Unit tests for non-blocking token provider delegation.
 * `app/src/test/java/com/mpc/propass/data/repository/AuthRepositoryTest.kt` — MockWebServer unit tests for login, register, token refresh, logout, and session restoration.
 * `app/src/test/java/com/mpc/propass/data/repository/UserRepositoryTest.kt` — MockWebServer unit tests for profile retrieval, profile updates, validation errors, and network failures.
-* `app/src/test/java/com/mpc/propass/data/repository/DashboardRepositoryTest.kt` — MockWebServer unit tests for aggregated dashboard data, empty activities, and error handling.
+* `app/src/test/java/com/mpc/propass/network/RoleBasedAuthTest.kt` — Unit tests for role-based authentication, UserRole enum mapping, DTO parsing, TokenStorage role persistence, and AuthRepository role routing.
 * `backend/tests/health.test.ts` — Backend Fastify health check test suite (2 tests passed).
-* `backend/tests/auth.test.ts` — Backend authentication test suite (14 tests passed).
+* `backend/tests/auth.test.ts` — Backend authentication & role default test suite (15 tests passed).
 * `backend/tests/user.test.ts` — Backend user profile & dashboard test suite (8 tests passed).
 * `backend/tests/event.test.ts` — Backend event catalog & QR validation test suite (18 tests passed).
 * `backend/tests/registration.test.ts` — Backend event registration test suite (20 tests passed).
 * `backend/tests/pass.test.ts` — Backend digital pass test suite (10 tests passed).
+* `backend/tests/organizer-auth.test.ts` — Backend role authorization test suite (6 tests passed).
 
 ---
 
@@ -573,6 +578,34 @@ All listed features have been executed and verified on physical hardware & devel
   * Added 4 comprehensive unit tests in [`OrganizerEventTest.kt`](file:///home/divy/AndroidProjects/ProPass/app/src/test/java/com/mpc/propass/organizer/OrganizerEventTest.kt) (defaults, custom question management, slug and QR parsing, and in-memory store operations).
   * 100/100 unit tests passing across 22 test suites (`./gradlew testDebugUnitTest`).
   * Android debug build cleanly assembled (`./gradlew assembleDebug`).
+* [x] **Phase 4A: Role-Based Authentication & Authorization (Completed):**
+  * **Backend (Fastify + Prisma + PostgreSQL):**
+    * Added `enum UserRole { ATTENDEE, ORGANIZER }` to Prisma schema with default `ATTENDEE`.
+    * Applied safe PostgreSQL migration (`20260907120000_add_user_role`) converting existing records to `ATTENDEE`.
+    * Normal user registration strictly forces `UserRole.ATTENDEE` and rejects/ignores client-supplied roles.
+    * JWT access token payload (`JwtUserPayload`) embeds `role: UserRole`.
+    * `GET /api/v1/auth/me` and auth endpoints (`login`, `register`) return user `role`.
+    * Implemented reusable role authorization middleware: `requireRole(UserRole.ORGANIZER)`.
+      * 401 Unauthorized for unauthenticated requests.
+      * 403 Forbidden with `"Organizer access required."` for non-organizers.
+      * Correct role proceeds cleanly.
+    * Protected organizer check endpoint: `GET /api/v1/organizer/me` (and alias `/api/organizer/me`).
+    * Seeded development organizer account in `prisma/seed.ts`: `organizer@propass.id` (password: `Organizer123!`).
+    * 79/79 Vitest backend tests passing across all 7 test suites (100% pass rate).
+  * **Android (Kotlin + DataStore + Retrofit):**
+    * Updated `AuthUserDto` with `UserRole` enum and `isOrganizer` helper, defaulting to `"ATTENDEE"` for backwards compatibility.
+    * Expanded `TokenStorage` and `DataStoreTokenStorage` with `KEY_USER_ROLE` persistence, volatile in-memory caching, `getUserRole()`, and reactive `userRoleFlow`.
+    * Updated `FakeTokenStorage` test double with role support.
+    * Expanded `AuthRepository` and `AuthRepositoryImpl` with `getUserRole()`, `isOrganizer()`, and `userRoleFlow`.
+    * Role-based session restoration in `SplashActivity`: routes to `OrganizerDashboardActivity` if authenticated as organizer, else `HomeDashboardActivity`.
+    * Post-login routing in `LoginActivity`: routes to `OrganizerDashboardActivity` for organizers, `HomeDashboardActivity` for attendees.
+    * Gated attendee access to Organizer Portal:
+      * `cardOrganizerPortal` on `HomeDashboardActivity` blocks attendees with Toast: `"Organizer access required."`.
+      * `btnOrganizerPortal` on `ProfileActivity` blocks attendees with Toast: `"Organizer access required."`.
+      * Defense-in-depth in `OrganizerDashboardActivity.onCreate` finishes and toasts `"Organizer access required."` if accessed by non-organizers.
+    * Added 5 new unit tests in `RoleBasedAuthTest.kt` covering enum mapping, DTO role parsing, role persistence, and repository status.
+    * 105/105 unit tests passing across 23 test suites (`./gradlew testDebugUnitTest`).
+    * Full debug build clean (`./gradlew assembleDebug`).
 
 ---
 
@@ -590,19 +623,14 @@ All listed features have been executed and verified on physical hardware & devel
 * [x] **Phase 3D: Event & QR Scanning Integration** (Completed)
 * [x] **Phase 3E: Registration & Digital Pass Integration** (Completed)
 * [x] **Profile & Dashboard Physical-Device Fixes** (Completed)
-* [x] **Phase 4 (Part 1): Organizer UI Phase 1 (Event Creation & Form Builder)** (Completed)
-* [ ] **Phase 4 (Part 2): Organizer Backend API Integration**
+* [x] **Organizer UI Phase 1 (Event Creation & Form Builder)** (Completed)
+* [x] **Phase 4A: Role-Based Authentication & Authorization** (Completed)
+* [ ] **Phase 4B: Organizer Backend API Integration (Event Persistence & Form Sync)**
 * [ ] **Phase 5: End-to-End Testing & Physical Device Verification**
 
 ---
 
 ## 18. Current Stopping Point
 
-> **Organizer UI Phase 1 Complete:** Implemented complete end-to-end Organizer flow within the Android app: Organizer Dashboard -> Create Event -> Form Builder -> Form Preview -> Event Publish Success with live 512x512 ZXing QR Code generation -> Return to Dashboard. All organizer state is managed locally via `OrganizerEventStore` with zero backend dependencies. Fully backward-compatible with all attendee features. Two entry points wired from Home Dashboard and Profile screen. 100/100 unit tests passing across 22 suites. Clean debug build (`./gradlew assembleDebug`). Not committed or pushed to Git. Stopping for user review.  
+> **Phase 4A (Role-Based Authentication & Authorization) Complete:** Implemented end-to-end role-based authentication and authorization across backend and Android. Backend Prisma schema updated with `enum UserRole { ATTENDEE, ORGANIZER }`, migration deployed, seed organizer account (`organizer@propass.id` / `Organizer123!`) created, JWT tokens include role claim, `requireRole(UserRole.ORGANIZER)` middleware implemented, and protected test endpoint `GET /api/v1/organizer/me` verified. Android models, DataStore `TokenStorage`, and `AuthRepository` updated with role tracking and routing: organizers route to `OrganizerDashboardActivity` upon login/splash, attendees route to `HomeDashboardActivity`, and attendee attempts to access the Organizer Portal are gated with `"Organizer access required."`. 79/79 backend tests and 105/105 Android unit tests passing. Clean `./gradlew assembleDebug` build. Not committed or pushed to Git. Stopping for user review.
 > *Updated on: September 7, 2026*
-
-
-
-
-
-

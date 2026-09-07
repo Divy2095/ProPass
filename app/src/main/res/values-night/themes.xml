@@ -35,4 +35,20 @@
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">true</item>
     </style>
+
+    <!-- Material Alert Dialog Theme for ProPass in Night Mode -->
+    <style name="ThemeOverlay.ProPass.MaterialAlertDialog" parent="ThemeOverlay.MaterialComponents.MaterialAlertDialog">
+        <item name="colorSurface">@color/surface_container_lowest</item>
+        <item name="android:background">@color/surface_container_lowest</item>
+        <item name="colorOnSurface">@color/on_surface</item>
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorSecondary">@color/secondary</item>
+        <item name="materialAlertDialogTitleTextStyle">@style/TextAppearance.ProPass.DialogTitle</item>
+    </style>
+
+    <style name="TextAppearance.ProPass.DialogTitle" parent="MaterialAlertDialog.MaterialComponents.Title.Text">
+        <item name="android:textColor">@color/on_surface</item>
+        <item name="android:fontFamily">@font/inter_bold</item>
+        <item name="android:textSize">18sp</item>
+    </style>
 </resources>

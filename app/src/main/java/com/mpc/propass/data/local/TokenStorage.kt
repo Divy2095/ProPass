@@ -32,9 +32,11 @@ interface TokenStorage {
     fun getRefreshToken(): String?
     fun getUserId(): String?
     fun getUserEmail(): String?
+    fun getUserRole(): String?
 
     val accessTokenFlow: Flow<String?>
     val refreshTokenFlow: Flow<String?>
+    val userRoleFlow: Flow<String?>
     val isAuthenticatedFlow: Flow<Boolean>
 }
 
@@ -76,6 +78,9 @@ class DataStoreTokenStorage(
     @Volatile
     private var cachedUserEmail: String? = null
 
+    @Volatile
+    private var cachedUserRole: String? = null
+
     init {
         // Eagerly observe DataStore changes to keep in-memory cache synchronized
         scope.launch {
@@ -92,6 +97,7 @@ class DataStoreTokenStorage(
                     cachedRefreshToken = preferences[KEY_REFRESH_TOKEN]
                     cachedUserId = preferences[KEY_USER_ID]
                     cachedUserEmail = preferences[KEY_USER_EMAIL]
+                    cachedUserRole = preferences[KEY_USER_ROLE]
                 }
         }
     }
@@ -108,11 +114,14 @@ class DataStoreTokenStorage(
     override suspend fun saveUser(userId: String, email: String, role: String?) {
         cachedUserId = userId
         cachedUserEmail = email
+        cachedUserRole = role
         dataStore.edit { preferences ->
             preferences[KEY_USER_ID] = userId
             preferences[KEY_USER_EMAIL] = email
             if (role != null) {
                 preferences[KEY_USER_ROLE] = role
+            } else {
+                preferences.remove(KEY_USER_ROLE)
             }
         }
     }
@@ -122,6 +131,7 @@ class DataStoreTokenStorage(
         cachedRefreshToken = null
         cachedUserId = null
         cachedUserEmail = null
+        cachedUserRole = null
         dataStore.edit { preferences ->
             preferences.remove(KEY_ACCESS_TOKEN)
             preferences.remove(KEY_REFRESH_TOKEN)
@@ -139,6 +149,8 @@ class DataStoreTokenStorage(
 
     override fun getUserEmail(): String? = cachedUserEmail
 
+    override fun getUserRole(): String? = cachedUserRole
+
     override val accessTokenFlow: Flow<String?> = dataStore.data
         .catch { if (it is IOException) emit(emptyPreferences()) else throw it }
         .map { it[KEY_ACCESS_TOKEN] }
@@ -146,6 +158,10 @@ class DataStoreTokenStorage(
     override val refreshTokenFlow: Flow<String?> = dataStore.data
         .catch { if (it is IOException) emit(emptyPreferences()) else throw it }
         .map { it[KEY_REFRESH_TOKEN] }
+
+    override val userRoleFlow: Flow<String?> = dataStore.data
+        .catch { if (it is IOException) emit(emptyPreferences()) else throw it }
+        .map { it[KEY_USER_ROLE] }
 
     override val isAuthenticatedFlow: Flow<Boolean> = dataStore.data
         .catch { if (it is IOException) emit(emptyPreferences()) else throw it }

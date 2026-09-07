@@ -6,6 +6,7 @@ import android.view.View
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
@@ -16,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import com.mpc.propass.HomeDashboardActivity
+import com.mpc.propass.ProPassApplication
 import com.mpc.propass.R
 import com.mpc.propass.organizer.data.OrganizerEventStore
 import com.mpc.propass.organizer.model.OrganizerEvent
@@ -47,6 +49,14 @@ class OrganizerDashboardActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val authRepository = (application as? ProPassApplication)?.authRepository
+        if (authRepository != null && !authRepository.isOrganizer()) {
+            Toast.makeText(this, "Organizer access required.", Toast.LENGTH_SHORT).show()
+            finish()
+            return
+        }
+
         setupEdgeToEdge()
         setContentView(R.layout.activity_organizer_dashboard)
 

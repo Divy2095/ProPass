@@ -172,6 +172,11 @@ class FormPreviewActivity : AppCompatActivity() {
             "${question.label} (Optional)"
         }
 
+        val onSurfaceColor = ContextCompat.getColor(this, R.color.on_surface)
+        val onSurfaceVariantColor = ContextCompat.getColor(this, R.color.on_surface_variant)
+        val primaryColor = ContextCompat.getColor(this, R.color.primary)
+        val highlightColor = ContextCompat.getColor(this, R.color.secondary_container)
+
         when (question.type) {
             FormQuestionType.SHORT_TEXT -> {
                 val til = TextInputLayout(this, null, com.google.android.material.R.attr.textInputStyle).apply {
@@ -184,6 +189,8 @@ class FormPreviewActivity : AppCompatActivity() {
                     setBoxCornerRadii(12f.dpToPxFloat(), 12f.dpToPxFloat(), 12f.dpToPxFloat(), 12f.dpToPxFloat())
                     boxBackgroundColor = ContextCompat.getColor(this@FormPreviewActivity, R.color.surface_container)
                     boxStrokeWidth = 0
+                    defaultHintTextColor = android.content.res.ColorStateList.valueOf(onSurfaceVariantColor)
+                    hintTextColor = android.content.res.ColorStateList.valueOf(primaryColor)
                 }
                 val et = TextInputEditText(til.context).apply {
                     layoutParams = LinearLayout.LayoutParams(
@@ -193,6 +200,9 @@ class FormPreviewActivity : AppCompatActivity() {
                     isFocusable = false
                     isClickable = false
                     hint = "Attendee answer..."
+                    setTextColor(onSurfaceColor)
+                    setHintTextColor(onSurfaceVariantColor)
+                    setHighlightColor(highlightColor)
                 }
                 til.addView(et)
                 container.addView(til)
@@ -209,6 +219,8 @@ class FormPreviewActivity : AppCompatActivity() {
                     setBoxCornerRadii(12f.dpToPxFloat(), 12f.dpToPxFloat(), 12f.dpToPxFloat(), 12f.dpToPxFloat())
                     boxBackgroundColor = ContextCompat.getColor(this@FormPreviewActivity, R.color.surface_container)
                     boxStrokeWidth = 0
+                    defaultHintTextColor = android.content.res.ColorStateList.valueOf(onSurfaceVariantColor)
+                    hintTextColor = android.content.res.ColorStateList.valueOf(primaryColor)
                 }
                 val et = TextInputEditText(til.context).apply {
                     layoutParams = LinearLayout.LayoutParams(
@@ -219,6 +231,9 @@ class FormPreviewActivity : AppCompatActivity() {
                     isFocusable = false
                     isClickable = false
                     hint = "Attendee detailed paragraph..."
+                    setTextColor(onSurfaceColor)
+                    setHintTextColor(onSurfaceVariantColor)
+                    setHighlightColor(highlightColor)
                 }
                 til.addView(et)
                 container.addView(til)
@@ -228,7 +243,7 @@ class FormPreviewActivity : AppCompatActivity() {
                 val tvLabel = TextView(this).apply {
                     text = labelText
                     textSize = 14f
-                    setTextColor(ContextCompat.getColor(this@FormPreviewActivity, R.color.on_surface))
+                    setTextColor(onSurfaceColor)
                     setPadding(0, 0, 0, 8.dpToPx())
                 }
                 container.addView(tvLabel)
@@ -243,7 +258,7 @@ class FormPreviewActivity : AppCompatActivity() {
                     val rb = RadioButton(this).apply {
                         text = option
                         textSize = 14f
-                        setTextColor(ContextCompat.getColor(this@FormPreviewActivity, R.color.on_surface_variant))
+                        setTextColor(onSurfaceColor)
                         isEnabled = false
                     }
                     rg.addView(rb)
@@ -255,7 +270,7 @@ class FormPreviewActivity : AppCompatActivity() {
                 val tvLabel = TextView(this).apply {
                     text = labelText
                     textSize = 14f
-                    setTextColor(ContextCompat.getColor(this@FormPreviewActivity, R.color.on_surface))
+                    setTextColor(onSurfaceColor)
                     setPadding(0, 0, 0, 8.dpToPx())
                 }
                 container.addView(tvLabel)
@@ -264,7 +279,7 @@ class FormPreviewActivity : AppCompatActivity() {
                     val cb = MaterialCheckBox(this).apply {
                         text = option
                         textSize = 14f
-                        setTextColor(ContextCompat.getColor(this@FormPreviewActivity, R.color.on_surface_variant))
+                        setTextColor(onSurfaceColor)
                         isEnabled = false
                     }
                     container.addView(cb)

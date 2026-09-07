@@ -215,7 +215,7 @@ class FormBuilderActivity : AppCompatActivity() {
             getString(R.string.dialog_add_question_title)
         }
 
-        val dialog = MaterialAlertDialogBuilder(this)
+        val dialog = MaterialAlertDialogBuilder(this, R.style.ThemeOverlay_ProPass_MaterialAlertDialog)
             .setTitle(dialogTitle)
             .setView(dialogView)
             .setPositiveButton(R.string.btn_save, null)

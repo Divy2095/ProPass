@@ -1,11 +1,11 @@
 import jwt, { SignOptions } from 'jsonwebtoken';
-import { Role } from '@prisma/client';
+import { UserRole } from '@prisma/client';
 import { env } from '../config/env.js';
 
 export interface JwtUserPayload {
   userId: string;
   email: string;
-  role: Role;
+  role: UserRole;
   type: 'access';
   iat?: number;
   exp?: number;
@@ -14,7 +14,7 @@ export interface JwtUserPayload {
 /**
  * Generates a signed JWT access token.
  */
-export function generateAccessToken(payload: { userId: string; email: string; role: Role }): string {
+export function generateAccessToken(payload: { userId: string; email: string; role: UserRole }): string {
   const tokenPayload: Omit<JwtUserPayload, 'iat' | 'exp'> = {
     userId: payload.userId,
     email: payload.email,

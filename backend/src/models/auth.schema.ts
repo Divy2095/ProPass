@@ -1,4 +1,3 @@
-import { Role } from '@prisma/client';
 import { z } from 'zod';
 
 export const registerSchema = z.object({
@@ -11,7 +10,6 @@ export const registerSchema = z.object({
     .string({ required_error: 'Password is required' })
     .min(8, 'Password must be at least 8 characters long')
     .max(128, 'Password cannot exceed 128 characters'),
-  role: z.nativeEnum(Role).optional().default(Role.USER),
 });
 
 export type RegisterInput = z.infer<typeof registerSchema>;

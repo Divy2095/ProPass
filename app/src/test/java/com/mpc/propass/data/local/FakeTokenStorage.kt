@@ -39,8 +39,10 @@ class FakeTokenStorage : TokenStorage {
     override fun getRefreshToken(): String? = _refreshToken.value
     override fun getUserId(): String? = _userId.value
     override fun getUserEmail(): String? = _userEmail.value
+    override fun getUserRole(): String? = _userRole.value
 
     override val accessTokenFlow: Flow<String?> = _accessToken.asStateFlow()
     override val refreshTokenFlow: Flow<String?> = _refreshToken.asStateFlow()
+    override val userRoleFlow: Flow<String?> = _userRole.asStateFlow()
     override val isAuthenticatedFlow: Flow<Boolean> = _accessToken.map { !it.isNullOrBlank() }
 }

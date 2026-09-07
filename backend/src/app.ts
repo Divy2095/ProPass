@@ -5,6 +5,7 @@ import { authRoutes } from './routes/auth.routes.js';
 import { dashboardRoutes } from './routes/dashboard.routes.js';
 import { eventRoutes } from './routes/event.routes.js';
 import { healthRoutes } from './routes/health.routes.js';
+import { organizerRoutes } from './routes/organizer.routes.js';
 import { passRoutes } from './routes/pass.routes.js';
 import { registrationRoutes } from './routes/registration.routes.js';
 import { userRoutes } from './routes/user.routes.js';
@@ -62,6 +63,10 @@ export async function buildApp(): Promise<FastifyInstance> {
   // Register Digital Pass Routes
   await app.register(passRoutes, { prefix: '/api/v1/passes' });
   await app.register(passRoutes, { prefix: '/api/passes' });
+
+  // Register Organizer Routes
+  await app.register(organizerRoutes, { prefix: '/api/v1/organizer' });
+  await app.register(organizerRoutes, { prefix: '/api/organizer' });
 
   return app;
 }

@@ -26,14 +26,37 @@ data class RefreshTokenRequest(
 )
 
 /**
+ * Canonical user roles supported by the ProPass platform.
+ */
+enum class UserRole {
+    ATTENDEE,
+    ORGANIZER;
+
+    companion object {
+        fun fromString(value: String?): UserRole {
+            return when (value?.uppercase()) {
+                ORGANIZER.name -> ORGANIZER
+                else -> ATTENDEE
+            }
+        }
+    }
+}
+
+/**
  * User account information returned by the authentication endpoints.
  */
 data class AuthUserDto(
     @field:Json(name = "id") val id: String = "",
     @field:Json(name = "email") val email: String = "",
-    @field:Json(name = "role") val role: String? = "USER",
+    @field:Json(name = "role") val role: String? = UserRole.ATTENDEE.name,
     @field:Json(name = "createdAt") val createdAt: String? = null
-)
+) {
+    val isOrganizer: Boolean
+        get() = role?.equals(UserRole.ORGANIZER.name, ignoreCase = true) == true
+
+    val userRole: UserRole
+        get() = UserRole.fromString(role)
+}
 
 /**
  * Access and refresh token pair returned upon successful authentication or token refresh.

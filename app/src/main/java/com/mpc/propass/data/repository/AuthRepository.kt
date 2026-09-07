@@ -28,6 +28,9 @@ interface AuthRepository {
     fun getAccessToken(): String?
     fun getUserId(): String?
     fun getUserEmail(): String?
+    fun getUserRole(): String?
+    fun isOrganizer(): Boolean
+    val userRoleFlow: Flow<String?>
     val isAuthenticatedFlow: Flow<Boolean>
 }
 
@@ -174,6 +177,13 @@ class AuthRepositoryImpl(
     override fun getUserId(): String? = tokenStorage.getUserId()
 
     override fun getUserEmail(): String? = tokenStorage.getUserEmail()
+
+    override fun getUserRole(): String? = tokenStorage.getUserRole()
+
+    override fun isOrganizer(): Boolean =
+        tokenStorage.getUserRole()?.equals(com.mpc.propass.network.model.UserRole.ORGANIZER.name, ignoreCase = true) == true
+
+    override val userRoleFlow: Flow<String?> = tokenStorage.userRoleFlow
 
     override val isAuthenticatedFlow: Flow<Boolean> = tokenStorage.isAuthenticatedFlow
 
