@@ -1,75 +1,167 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:paddingStart="24dp"
-    android:paddingTop="16dp"
-    android:paddingEnd="24dp"
-    android:paddingBottom="16dp">
+    android:overScrollMode="never">
 
-    <!-- Professional Title -->
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/tilProfileTitle"
-        style="@style/Widget.ProPass.TextInputLayout.Filled"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        android:hint="@string/label_title">
+        android:orientation="vertical"
+        android:paddingStart="24dp"
+        android:paddingTop="16dp"
+        android:paddingEnd="24dp"
+        android:paddingBottom="16dp">
 
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/etProfileTitle"
+        <!-- Hint on Score Breakdown -->
+        <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
             android:fontFamily="@font/inter_regular"
-            android:hint="@string/hint_title"
-            android:inputType="textCapWords"
-            android:maxLines="1"
-            android:textColor="@color/on_surface"
-            android:textSize="16sp" />
-    </com.google.android.material.textfield.TextInputLayout>
+            android:text="@string/profile_score_hint"
+            android:textColor="@color/on_surface_variant"
+            android:textSize="13sp" />
 
-    <!-- Organization -->
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/tilProfileOrg"
-        style="@style/Widget.ProPass.TextInputLayout.Filled"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        android:hint="@string/label_organization">
-
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/etProfileOrg"
+        <!-- 1. Full Name (+20%) -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilProfileFullName"
+            style="@style/Widget.ProPass.TextInputLayout.Filled"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:fontFamily="@font/inter_regular"
-            android:hint="@string/hint_organization"
-            android:inputType="textCapWords"
-            android:maxLines="1"
-            android:textColor="@color/on_surface"
-            android:textSize="16sp" />
-    </com.google.android.material.textfield.TextInputLayout>
+            android:layout_marginBottom="16dp"
+            android:hint="@string/label_full_name"
+            app:helperText="+20% • Required"
+            app:helperTextEnabled="true">
 
-    <!-- Phone Number -->
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/tilProfilePhone"
-        style="@style/Widget.ProPass.TextInputLayout.Filled"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:hint="@string/label_phone">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etProfileFullName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/inter_regular"
+                android:hint="@string/hint_full_name"
+                android:inputType="textPersonName|textCapWords"
+                android:maxLines="1"
+                android:textColor="@color/on_surface"
+                android:textSize="16sp" />
+        </com.google.android.material.textfield.TextInputLayout>
 
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/etProfilePhone"
+        <!-- 2. Professional Title (+20%) -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilProfileTitle"
+            style="@style/Widget.ProPass.TextInputLayout.Filled"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:fontFamily="@font/inter_regular"
-            android:hint="@string/hint_phone"
-            android:inputType="phone"
-            android:maxLines="1"
-            android:textColor="@color/on_surface"
-            android:textSize="16sp" />
-    </com.google.android.material.textfield.TextInputLayout>
+            android:layout_marginBottom="16dp"
+            android:hint="@string/label_title"
+            app:helperText="+20%"
+            app:helperTextEnabled="true">
 
-</LinearLayout>
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etProfileTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/inter_regular"
+                android:hint="@string/hint_title"
+                android:inputType="textCapWords"
+                android:maxLines="1"
+                android:textColor="@color/on_surface"
+                android:textSize="16sp" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- 3. Organization (+20%) -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilProfileOrg"
+            style="@style/Widget.ProPass.TextInputLayout.Filled"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:hint="@string/label_organization"
+            app:helperText="+20%"
+            app:helperTextEnabled="true">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etProfileOrg"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/inter_regular"
+                android:hint="@string/hint_organization"
+                android:inputType="textCapWords"
+                android:maxLines="1"
+                android:textColor="@color/on_surface"
+                android:textSize="16sp" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- 4. Phone Number (+15%) -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilProfilePhone"
+            style="@style/Widget.ProPass.TextInputLayout.Filled"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:hint="@string/label_phone"
+            app:helperText="+15%"
+            app:helperTextEnabled="true">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etProfilePhone"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/inter_regular"
+                android:hint="@string/hint_phone"
+                android:inputType="phone"
+                android:maxLines="1"
+                android:textColor="@color/on_surface"
+                android:textSize="16sp" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- 5. LinkedIn Profile URL (+15%) -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilProfileLinkedin"
+            style="@style/Widget.ProPass.TextInputLayout.Filled"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:hint="@string/label_linkedin"
+            app:helperText="+15% • e.g. https://linkedin.com/in/username"
+            app:helperTextEnabled="true">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etProfileLinkedin"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/inter_regular"
+                android:hint="@string/hint_linkedin"
+                android:inputType="textUri"
+                android:maxLines="1"
+                android:textColor="@color/on_surface"
+                android:textSize="16sp" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- 6. Avatar Image URL (+10%) -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilProfileAvatar"
+            style="@style/Widget.ProPass.TextInputLayout.Filled"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:hint="@string/label_avatar_url"
+            app:helperText="+10% • e.g. https://example.com/avatar.jpg"
+            app:helperTextEnabled="true">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etProfileAvatar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/inter_regular"
+                android:hint="@string/hint_avatar_url"
+                android:inputType="textUri"
+                android:maxLines="1"
+                android:textColor="@color/on_surface"
+                android:textSize="16sp" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+    </LinearLayout>
+
+</androidx.core.widget.NestedScrollView>

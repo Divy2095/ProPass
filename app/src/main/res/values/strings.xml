@@ -22,6 +22,21 @@
     <string name="error_login_failed">Login failed. Please check your credentials.</string>
     <string name="cd_google_logo">Google logo</string>
 
+    <!-- Sign Up Screen Strings -->
+    <string name="signup_title">Create Account</string>
+    <string name="signup_subtitle">Sign up to manage your professional identity</string>
+    <string name="hint_confirm_password">Confirm Password</string>
+    <string name="signup_btn_text">Sign Up</string>
+    <string name="signup_creating_account">Creating account...</string>
+    <string name="signup_already_have_account">"Already have an account? "</string>
+    <string name="signup_sign_in">Sign In</string>
+    <string name="signup_success_toast">Account created successfully!</string>
+    <string name="error_password_too_short">Password must be at least 8 characters</string>
+    <string name="error_empty_confirm_password">Please confirm your password</string>
+    <string name="error_passwords_do_not_match">Passwords do not match</string>
+    <string name="error_signup_failed">Registration failed. Please try again.</string>
+    <string name="error_email_already_exists">An account with this email address already exists</string>
+
     <!-- Onboarding Smart Scan Strings -->
     <string name="onboarding_smart_scan_title">Scan. Auto-fill. Submit.</string>
     <string name="onboarding_smart_scan_description">Scan any organization QR code and let ProPass handle the paperwork instantly.</string>
@@ -70,17 +85,17 @@
     <!-- Home Dashboard Strings -->
     <string name="home_top_title">Home</string>
     <string name="home_welcome_back">Welcome back</string>
-    <string name="home_user_name">Hello, Sarah</string>
-    <string name="pass_tier_badge">PROPASS PREMIUM</string>
-    <string name="pass_user_name">Sarah Jenkins</string>
-    <string name="pass_user_role">Senior UX Researcher</string>
-    <string name="pass_user_org">TechFlow Inc.</string>
+    <string name="home_user_name">Hello</string>
+    <string name="pass_tier_badge">PROPASS STANDARD</string>
+    <string name="pass_user_name">—</string>
+    <string name="pass_user_role">—</string>
+    <string name="pass_user_org">—</string>
     <string name="action_scan_qr">Scan QR</string>
     <string name="action_my_pass">My Pass</string>
     <string name="profile_complete_title">Complete your profile</string>
-    <string name="profile_complete_subtitle">Add your work history to stand out.</string>
+    <string name="profile_complete_subtitle">Add your professional details to stand out.</string>
     <string name="btn_add_details">Add Details</string>
-    <string name="profile_completion_percent">85%</string>
+    <string name="profile_completion_percent">0%</string>
     <string name="recent_activity_title">Recent Activity</string>
     <string name="activity1_title">TechConf 2024</string>
     <string name="activity1_subtitle">Form submitted • Yesterday</string>
@@ -93,9 +108,9 @@
 
     <!-- Digital Pass Screen Strings -->
     <string name="pass_screen_title">My Pass</string>
-    <string name="pass_holder_name">Elena Rodriguez</string>
-    <string name="pass_holder_role">Lead Product Designer</string>
-    <string name="pass_holder_org">Acme Corp</string>
+    <string name="pass_holder_name">—</string>
+    <string name="pass_holder_role">—</string>
+    <string name="pass_holder_org">—</string>
     <string name="pass_scan_to_connect">SCAN TO CONNECT</string>
     <string name="btn_share_link">Share Link</string>
     <string name="btn_save_image">Save Image</string>
@@ -158,6 +173,22 @@
     <string name="profile_updated_toast">Profile updated successfully</string>
     <string name="dashboard_error_loading">Failed to load dashboard</string>
     <string name="action_retry">Retry</string>
+    <string name="hint_full_name">Enter your full name</string>
+    <string name="label_linkedin">LinkedIn URL</string>
+    <string name="hint_linkedin">https://linkedin.com/in/username</string>
+    <string name="label_avatar_url">Avatar Image URL (Optional)</string>
+    <string name="hint_avatar_url">https://example.com/photo.jpg</string>
+    <string name="profile_screen_title">Profile</string>
+    <string name="profile_edit_btn">Edit Profile</string>
+    <string name="profile_not_set">Not set</string>
+    <string name="profile_complete_all_done">All profile details complete!</string>
+    <string name="profile_missing_prefix">Incomplete: </string>
+    <string name="profile_section_personal">Personal &amp; Professional</string>
+    <string name="profile_headline_empty">Add your title and organization</string>
+    <string name="error_full_name_empty">Full Name is required</string>
+    <string name="error_invalid_url">Must be a valid web URL</string>
+    <string name="error_profile_load_failed">Failed to load profile</string>
+    <string name="profile_score_hint">Complete all 6 fields to reach 100% profile score.</string>
 
     <!-- Phase 3D Event & QR Strings -->
     <string name="scan_hint_validating">Validating event with ProPass...</string>

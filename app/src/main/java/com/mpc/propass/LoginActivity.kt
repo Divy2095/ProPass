@@ -174,7 +174,7 @@ class LoginActivity : AppCompatActivity() {
         }
 
         tvSignUpFooter.setOnClickListener {
-            val intent = Intent(this, OnboardingProfileCreationActivity::class.java)
+            val intent = Intent(this, SignUpActivity::class.java)
             startActivity(intent)
         }
     }
@@ -224,7 +224,9 @@ class LoginActivity : AppCompatActivity() {
 
                 result.onSuccess {
                     Toast.makeText(this@LoginActivity, getString(R.string.login_success_toast), Toast.LENGTH_SHORT).show()
-                    val intent = Intent(this@LoginActivity, OnboardingProfileCreationActivity::class.java)
+                    val intent = Intent(this@LoginActivity, HomeDashboardActivity::class.java).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    }
                     startActivity(intent)
                     finish()
                 }.onFailure { exception ->

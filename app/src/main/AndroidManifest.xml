@@ -44,6 +44,14 @@
             tools:ignore="LockedOrientationActivity" />
 
         <activity
+            android:name=".SignUpActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.ProPass.Login"
+            android:windowSoftInputMode="adjustResize"
+            tools:ignore="LockedOrientationActivity" />
+
+        <activity
             android:name=".OnboardingProfileCreationActivity"
             android:exported="true"
             android:screenOrientation="portrait"
@@ -68,6 +76,13 @@
         <activity
             android:name=".HomeDashboardActivity"
             android:exported="true"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.ProPass"
+            tools:ignore="LockedOrientationActivity" />
+
+        <activity
+            android:name=".ProfileActivity"
+            android:exported="false"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.ProPass"
             tools:ignore="LockedOrientationActivity" />

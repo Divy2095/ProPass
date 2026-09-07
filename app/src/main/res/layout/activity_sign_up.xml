@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/signUpScrollView"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    android:fillViewport="true"
+    android:overScrollMode="never"
+    tools:context=".SignUpActivity">
+
+    <FrameLayout
+        android:id="@+id/signUpRootContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="20dp"
+        android:paddingTop="32dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="32dp">
+
+        <LinearLayout
+            android:id="@+id/signUpContentColumn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <!-- 1. App Icon (96dp x 96dp, 16dp radius, subtle shadow) -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardAppIcon"
+                android:layout_width="96dp"
+                android:layout_height="96dp"
+                android:layout_marginBottom="32dp"
+                app:cardBackgroundColor="@color/surface_container_lowest"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="4dp"
+                app:cardMaxElevation="6dp"
+                app:cardPreventCornerOverlap="false"
+                app:strokeWidth="0dp">
+
+                <ImageView
+                    android:id="@+id/ivLogo"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:contentDescription="@string/cd_app_icon"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/ic_propass_logo" />
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- 2. Header Text Block -->
+            <TextView
+                android:id="@+id/tvSignUpTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp"
+                android:fontFamily="@font/inter_semibold"
+                android:includeFontPadding="false"
+                android:letterSpacing="-0.01"
+                android:lineHeight="28sp"
+                android:text="@string/signup_title"
+                android:textAlignment="center"
+                android:textColor="@color/on_surface"
+                android:textSize="22sp"
+                tools:targetApi="p" />
+
+            <TextView
+                android:id="@+id/tvSignUpSubtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="32dp"
+                android:fontFamily="@font/inter_regular"
+                android:includeFontPadding="false"
+                android:lineHeight="20sp"
+                android:text="@string/signup_subtitle"
+                android:textAlignment="center"
+                android:textColor="@color/on_surface_variant"
+                android:textSize="14sp"
+                tools:targetApi="p" />
+
+            <!-- 3. Form Container -->
+            <LinearLayout
+                android:id="@+id/formContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- Email Input -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/tilEmail"
+                    style="@style/Widget.ProPass.TextInputLayout.Filled"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/hint_email"
+                    app:boxBackgroundColor="@color/surface_container"
+                    app:boxCornerRadiusBottomEnd="12dp"
+                    app:boxCornerRadiusBottomStart="12dp"
+                    app:boxCornerRadiusTopEnd="12dp"
+                    app:boxCornerRadiusTopStart="12dp">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etEmail"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:fontFamily="@font/inter_regular"
+                        android:imeOptions="actionNext"
+                        android:inputType="textEmailAddress"
+                        android:paddingStart="16dp"
+                        android:paddingTop="20dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="8dp"
+                        android:textColor="@color/on_surface"
+                        android:textSize="16sp" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Password Input (16dp spacing from email) -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/tilPassword"
+                    style="@style/Widget.ProPass.TextInputLayout.Filled"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:hint="@string/hint_password"
+                    app:boxBackgroundColor="@color/surface_container"
+                    app:boxCornerRadiusBottomEnd="12dp"
+                    app:boxCornerRadiusBottomStart="12dp"
+                    app:boxCornerRadiusTopEnd="12dp"
+                    app:boxCornerRadiusTopStart="12dp"
+                    app:endIconMode="password_toggle"
+                    app:endIconTint="@color/on_surface_variant">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etPassword"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:fontFamily="@font/inter_regular"
+                        android:imeOptions="actionNext"
+                        android:inputType="textPassword"
+                        android:paddingStart="16dp"
+                        android:paddingTop="20dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="8dp"
+                        android:textColor="@color/on_surface"
+                        android:textSize="16sp" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Confirm Password Input (16dp spacing from password) -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/tilConfirmPassword"
+                    style="@style/Widget.ProPass.TextInputLayout.Filled"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:hint="@string/hint_confirm_password"
+                    app:boxBackgroundColor="@color/surface_container"
+                    app:boxCornerRadiusBottomEnd="12dp"
+                    app:boxCornerRadiusBottomStart="12dp"
+                    app:boxCornerRadiusTopEnd="12dp"
+                    app:boxCornerRadiusTopStart="12dp"
+                    app:endIconMode="password_toggle"
+                    app:endIconTint="@color/on_surface_variant">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etConfirmPassword"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:fontFamily="@font/inter_regular"
+                        android:imeOptions="actionDone"
+                        android:inputType="textPassword"
+                        android:paddingStart="16dp"
+                        android:paddingTop="20dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="8dp"
+                        android:textColor="@color/on_surface"
+                        android:textSize="16sp" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Primary Sign Up Button (56dp height, 12dp radius, #0032D7, arrow icon) -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSignUp"
+                    style="@style/Widget.ProPass.Button.Primary"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:layout_marginTop="24dp"
+                    android:layout_marginBottom="24dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:text="@string/signup_btn_text"
+                    app:icon="@drawable/ic_arrow_forward"
+                    app:iconGravity="textEnd"
+                    app:iconPadding="8dp" />
+
+            </LinearLayout>
+
+            <!-- 4. Footer: "Already have an account? Sign In" -->
+            <TextView
+                android:id="@+id/tvSignInFooter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:fontFamily="@font/inter_regular"
+                android:lineHeight="20sp"
+                android:padding="8dp"
+                android:text="@string/signup_already_have_account"
+                android:textAlignment="center"
+                android:textColor="@color/on_surface_variant"
+                android:textSize="14sp"
+                tools:targetApi="p" />
+
+        </LinearLayout>
+
+    </FrameLayout>
+
+</androidx.core.widget.NestedScrollView>

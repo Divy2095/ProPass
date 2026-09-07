@@ -227,31 +227,28 @@ class HomeDashboardActivity : AppCompatActivity() {
         cachedUser = data.user
 
         // 1. Greeting Section
-        val greetingText = if (data.greeting.isNotBlank()) {
-            data.greeting
-        } else {
-            val name = data.profile?.fullName?.trim()?.split(" ")?.firstOrNull()
-                ?: data.user.email.substringBefore("@")
-            "Hello, $name"
+        val realName = data.profile?.fullName?.takeUnless {
+            it.isBlank() || it.equals("ProPass User", ignoreCase = true)
         }
-        tvHomeUserName.text = greetingText
+        val firstName = realName?.trim()?.split(" ")?.firstOrNull()
+            ?: data.user.email.substringBefore("@")
+        tvHomeUserName.text = "Hello, $firstName"
 
         // 2. Digital Pass Preview Card
         val passTier = data.pass?.tier ?: "STANDARD"
         tvPassTier.text = "PROPASS $passTier"
-        tvPassUserName.text = data.profile?.fullName?.ifBlank { null }
-            ?: data.user.email
-        tvPassUserRole.text = data.profile?.title?.ifBlank { null }
-            ?: getString(R.string.pass_user_role)
-        tvPassUserOrg.text = data.profile?.organization?.ifBlank { null }
-            ?: getString(R.string.pass_user_org)
+        tvPassUserName.text = realName ?: data.user.email
+        tvPassUserRole.text = data.profile?.title?.takeIf { it.isNotBlank() }
+            ?: getString(R.string.profile_not_set)
+        tvPassUserOrg.text = data.profile?.organization?.takeIf { it.isNotBlank() }
+            ?: getString(R.string.profile_not_set)
 
         // 3. Profile Completion Ring
         val completionScore = data.profile?.completionScore ?: 0
         animateProgressRing(completionScore.toFloat())
         tvProgressPercent.text = "${completionScore}%"
         btnAddDetails.text = if (completionScore >= 100) {
-            getString(R.string.dialog_edit_profile_title)
+            getString(R.string.profile_edit_btn)
         } else {
             getString(R.string.btn_add_details)
         }
@@ -390,7 +387,7 @@ class HomeDashboardActivity : AppCompatActivity() {
         // Profile Editing flow
         btnAddDetails.setOnTouchListener(touchListener95)
         btnAddDetails.setOnClickListener {
-            showEditProfileDialog()
+            openEditProfileDialog()
         }
 
         itemActivity1.setOnTouchListener(touchListener98)
@@ -416,119 +413,33 @@ class HomeDashboardActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
-        // Profile & Session management
-        tabProfile.setOnClickListener {
-            showProfileAccountDialog()
+        // Profile destination
+        val openProfile = {
+            val intent = Intent(this, ProfileActivity::class.java)
+            startActivity(intent)
         }
-        topBarAvatar.setOnClickListener {
-            showProfileAccountDialog()
-        }
-        headerAvatarContainer.setOnClickListener {
-            showProfileAccountDialog()
-        }
+        tabProfile.setOnClickListener { openProfile() }
+        topBarAvatar.setOnClickListener { openProfile() }
+        headerAvatarContainer.setOnClickListener { openProfile() }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        loadDashboardData()
     }
 
     /**
-     * Dialog to edit professional profile fields (Title, Organization, Phone) via PUT /api/v1/users/profile.
+     * Complete 6-field profile editing dialog via EditProfileDialogHelper.
      */
-    private fun showEditProfileDialog() {
-        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_edit_profile, null)
-        val etTitle = dialogView.findViewById<TextInputEditText>(R.id.etProfileTitle)
-        val etOrg = dialogView.findViewById<TextInputEditText>(R.id.etProfileOrg)
-        val etPhone = dialogView.findViewById<TextInputEditText>(R.id.etProfilePhone)
-
-        // Pre-fill existing profile data
-        cachedProfile?.let { profile ->
-            etTitle.setText(profile.title ?: "")
-            etOrg.setText(profile.organization ?: "")
-            etPhone.setText(profile.phone ?: "")
+    private fun openEditProfileDialog() {
+        com.mpc.propass.util.EditProfileDialogHelper.showEditProfileDialog(
+            context = this,
+            coroutineScope = lifecycleScope,
+            userRepository = userRepository,
+            currentProfile = cachedProfile
+        ) {
+            loadDashboardData()
         }
-
-        MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.dialog_edit_profile_title)
-            .setView(dialogView)
-            .setPositiveButton(R.string.btn_save) { dialog, _ ->
-                val newTitle = etTitle.text?.toString()?.trim()
-                val newOrg = etOrg.text?.toString()?.trim()
-                val newPhone = etPhone.text?.toString()?.trim()
-
-                updateProfile(newTitle, newOrg, newPhone)
-                dialog.dismiss()
-            }
-            .setNegativeButton(R.string.btn_cancel, null)
-            .show()
-    }
-
-    /**
-     * Updates user profile on the backend and triggers dashboard refresh.
-     */
-    private fun updateProfile(title: String?, organization: String?, phone: String?) {
-        lifecycleScope.launch {
-            dashboardProgressBar.visibility = View.VISIBLE
-
-            val request = UpdateProfileRequest(
-                title = if (title.isNullOrBlank()) null else title,
-                organization = if (organization.isNullOrBlank()) null else organization,
-                phone = if (phone.isNullOrBlank()) null else phone
-            )
-
-            val result = userRepository.updateUserProfile(request)
-            dashboardProgressBar.visibility = View.GONE
-
-            result.onSuccess { responseData ->
-                Toast.makeText(
-                    this@HomeDashboardActivity,
-                    R.string.profile_updated_toast,
-                    Toast.LENGTH_SHORT
-                ).show()
-
-                // Refresh dashboard to reflect new profile & updated completion score
-                loadDashboardData()
-            }.onFailure { error ->
-                Toast.makeText(
-                    this@HomeDashboardActivity,
-                    error.message ?: "Failed to update profile",
-                    Toast.LENGTH_LONG
-                ).show()
-            }
-        }
-    }
-
-    /**
-     * Displays profile details and session options (including Logout).
-     */
-    private fun showProfileAccountDialog() {
-        val fullName = cachedProfile?.fullName?.ifBlank { null }
-            ?: cachedUser?.email?.substringBefore("@")
-            ?: "ProPass Member"
-        val email = cachedUser?.email
-            ?: authRepository.getUserEmail()
-            ?: "—"
-        val title = cachedProfile?.title ?: "Not specified"
-        val org = cachedProfile?.organization ?: "Not specified"
-        val score = cachedProfile?.completionScore ?: 0
-        val verified = if (cachedProfile?.isVerified == true) "Verified ✓" else "Standard"
-
-        val message = """
-            Name: $fullName
-            Email: $email
-            Title: $title
-            Organization: $org
-            Status: $verified
-            Completion: $score%
-        """.trimIndent()
-
-        MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.dialog_profile_account_title)
-            .setMessage(message)
-            .setPositiveButton(R.string.dialog_edit_profile_title) { _, _ ->
-                showEditProfileDialog()
-            }
-            .setNeutralButton(R.string.btn_logout) { _, _ ->
-                performLogout()
-            }
-            .setNegativeButton(R.string.btn_cancel, null)
-            .show()
     }
 
     /**

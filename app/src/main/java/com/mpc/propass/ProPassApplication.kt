@@ -45,6 +45,13 @@ class ProPassApplication : Application() {
         super.onCreate()
         instance = this
 
+        // 0. Auto-configure base URL: use adb reverse loopback on physical device
+        if (!isEmulator()) {
+            com.mpc.propass.network.config.NetworkConfig.baseUrl =
+                com.mpc.propass.network.config.NetworkConfig.DEVICE_ADB_REVERSE_BASE_URL
+            NetworkClient.reset()
+        }
+
         // 1. Initialize persistent DataStore token storage
         tokenStorage = DataStoreTokenStorage.create(this)
 
@@ -72,6 +79,25 @@ class ProPassApplication : Application() {
         digitalPassRepository = com.mpc.propass.data.repository.DigitalPassRepositoryImpl(
             apiService = NetworkClient.apiService
         )
+    }
+
+    private fun isEmulator(): Boolean {
+        return (android.os.Build.BRAND.startsWith("generic") && android.os.Build.DEVICE.startsWith("generic"))
+            || android.os.Build.FINGERPRINT.startsWith("generic")
+            || android.os.Build.FINGERPRINT.startsWith("unknown")
+            || android.os.Build.HARDWARE.contains("goldfish")
+            || android.os.Build.HARDWARE.contains("ranchu")
+            || android.os.Build.MODEL.contains("google_sdk")
+            || android.os.Build.MODEL.contains("Emulator")
+            || android.os.Build.MODEL.contains("Android SDK built for x86")
+            || android.os.Build.MANUFACTURER.contains("Genymotion")
+            || android.os.Build.PRODUCT.contains("sdk_google")
+            || android.os.Build.PRODUCT.contains("google_sdk")
+            || android.os.Build.PRODUCT.contains("sdk")
+            || android.os.Build.PRODUCT.contains("sdk_x86")
+            || android.os.Build.PRODUCT.contains("vbox86p")
+            || android.os.Build.PRODUCT.contains("emulator")
+            || android.os.Build.PRODUCT.contains("simulator")
     }
 
     companion object {

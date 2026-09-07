@@ -283,7 +283,9 @@ class DigitalPassActivity : AppCompatActivity() {
         // Action Buttons
         btnShareLink.setOnTouchListener(touchListener98)
         btnShareLink.setOnClickListener {
-            val name = currentPassData?.holder?.fullName ?: getString(R.string.pass_holder_name)
+            val name = currentPassData?.holder?.fullName?.takeUnless {
+                it.isBlank() || it.equals("ProPass User", ignoreCase = true)
+            } ?: currentPassData?.holder?.email?.substringBefore("@") ?: "ProPass Member"
             val passNum = currentPassData?.pass?.passNumber ?: ""
             val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
                 type = "text/plain"
@@ -323,13 +325,17 @@ class DigitalPassActivity : AppCompatActivity() {
             loadPassData()
         }
 
-        tabProfile.setOnClickListener {
-            Toast.makeText(this, "Profile", Toast.LENGTH_SHORT).show()
+        val openProfile = {
+            val intent = android.content.Intent(this, ProfileActivity::class.java)
+            startActivity(intent)
         }
+        tabProfile.setOnClickListener { openProfile() }
+        topBarAvatar.setOnClickListener { openProfile() }
+    }
 
-        topBarAvatar.setOnClickListener {
-            Toast.makeText(this, "Profile", Toast.LENGTH_SHORT).show()
-        }
+    override fun onResume() {
+        super.onResume()
+        loadPassData()
     }
 
     private fun loadPassData() {
@@ -361,9 +367,12 @@ class DigitalPassActivity : AppCompatActivity() {
         val pass = data.pass
         val holder = data.holder
 
-        tvUserName.text = holder.fullName.ifBlank { getString(R.string.pass_holder_name) }
-        tvUserRole.text = holder.title?.takeIf { it.isNotBlank() } ?: getString(R.string.pass_holder_role)
-        tvUserOrg.text = holder.organization?.takeIf { it.isNotBlank() } ?: getString(R.string.pass_holder_org)
+        val fullName = holder.fullName.takeUnless {
+            it.isBlank() || it.equals("ProPass User", ignoreCase = true)
+        } ?: holder.email.substringBefore("@")
+        tvUserName.text = fullName
+        tvUserRole.text = holder.title?.takeIf { it.isNotBlank() } ?: getString(R.string.profile_not_set)
+        tvUserOrg.text = holder.organization?.takeIf { it.isNotBlank() } ?: getString(R.string.profile_not_set)
         badgeVerified.visibility = if (holder.isVerified) View.VISIBLE else View.GONE
 
         tvPassNumber.text = pass.passNumber

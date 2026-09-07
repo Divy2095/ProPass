@@ -453,7 +453,7 @@ npm run dev
 All listed features have been executed and verified on physical hardware & development environment:
 
 * [x] **Android Gradle Build:** `./gradlew assembleDebug` builds with 0 errors (`BUILD SUCCESSFUL`).
-* [x] **Android Unit Tests:** 82/82 unit tests passing across 19 test suites (`./gradlew testDebugUnitTest`).
+* [x] **Android Unit Tests:** 92/92 unit tests passing across 20 test suites (`./gradlew testDebugUnitTest`).
 * [x] **Android Physical Device Features:** Live CameraX viewfinder, physical torch, ML Kit QR detection, local QR validation, Smart Form validation, Review & Success flows verified on device `KVAMAAXSPNOV7PXC`.
 * [x] **Backend Foundation (Phase 1):**
   * Node.js v22 + TypeScript + Fastify + Prisma initialized.
@@ -532,6 +532,29 @@ All listed features have been executed and verified on physical hardware & devel
     * Handles loading with centered progress bar and error states with a retry button.
   * 82/82 unit tests passing across 19 test suites (`./gradlew testDebugUnitTest`).
   * Full Android debug build clean: `./gradlew assembleDebug` (`BUILD SUCCESSFUL`).
+* [x] **Authentication & SignUp Navigation Fix:**
+  * Fixed bug where tapping "Sign Up" in `LoginActivity` or logging in successfully launched `OnboardingProfileCreationActivity`.
+  * Created dedicated `SignUpActivity` (`activity_sign_up.xml`) matching ProPass design specifications, collecting `email`, `password`, and `confirmPassword`.
+  * Implemented `AuthInputValidator` providing unit-tested validation for email format, password length (8-128 chars per backend contract), and password confirmation matching.
+  * Corrected navigation flows:
+    * `LoginActivity` "Sign Up" footer launches `SignUpActivity`.
+    * `LoginActivity` successful login routes to `HomeDashboardActivity` with backstack clearance (`FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK`).
+    * `SignUpActivity` successful registration routes to `HomeDashboardActivity` with session persistence and backstack clearance.
+    * "Sign In" footer in `SignUpActivity` returns cleanly to `LoginActivity`.
+  * Preserved onboarding activities (`OnboardingProfileCreationActivity`, `OnboardingSmartScanActivity`) in codebase for product onboarding.
+  * Added 10 new unit tests in `AuthInputValidatorTest` (92/92 tests passing across 20 suites).
+* [x] **Profile & Dashboard Physical-Device Fixes:**
+  * Created dedicated `ProfileActivity` ([`ProfileActivity.kt`](file:///home/divy/AndroidProjects/ProPass/app/src/main/java/com/mpc/propass/ProfileActivity.kt)) and layout ([`activity_profile.xml`](file:///home/divy/AndroidProjects/ProPass/app/src/main/res/layout/activity_profile.xml)) matching the Stitch design language. Registered in [`AndroidManifest.xml`](file:///home/divy/AndroidProjects/ProPass/app/src/main/AndroidManifest.xml).
+  * Wired bottom navigation "Profile" tab, top-bar avatar, and dashboard greeting avatar to launch `ProfileActivity` without duplicate navigation stacks.
+  * Resolved profile completion score stuck at 55%:
+    * Expanded [`dialog_edit_profile.xml`](file:///home/divy/AndroidProjects/ProPass/app/src/main/res/layout/dialog_edit_profile.xml) to expose all 6 backend fields: `fullName` (+20%), `title` (+20%), `organization` (+20%), `phone` (+15%), `linkedinUrl` (+15%), and `avatarUrl` (+10%).
+    * Implemented shared [`EditProfileDialogHelper.kt`](file:///home/divy/AndroidProjects/ProPass/app/src/main/java/com/mpc/propass/util/EditProfileDialogHelper.kt) for unified editing from both `HomeDashboardActivity` and `ProfileActivity`.
+  * Removed static/fake identity fallbacks ("Elena Rodriguez", "Sarah Jenkins", "ProPass User") across XML layouts and Kotlin controllers. If `fullName` is unset or "ProPass User", runtime cleanly resolves to title-cased email prefix or neutral placeholders ("—").
+  * Added automatic physical device detection in [`ProPassApplication.kt`](file:///home/divy/AndroidProjects/ProPass/app/src/main/java/com/mpc/propass/ProPassApplication.kt) to configure `DEVICE_ADB_REVERSE_BASE_URL` (`http://127.0.0.1:3000/`) while keeping emulator defaults and JVM unit tests completely intact.
+  * Added 4 unit tests in [`ProfileIntegrationTest.kt`](file:///home/divy/AndroidProjects/ProPass/app/src/test/java/com/mpc/propass/ProfileIntegrationTest.kt) covering 6-field serialization, completion score weights, name sanitization, and missing fields identification.
+  * 96/96 unit tests passing across 21 test suites (`./gradlew testDebugUnitTest`).
+  * Android debug build cleanly assembled (`./gradlew assembleDebug`).
+  * Verified live on physical hardware (`KVAMAAXSPNOV7PXC`) with dynamic 75% score and real user profile binding.
 
 ---
 
@@ -548,6 +571,7 @@ All listed features have been executed and verified on physical hardware & devel
 * [x] **Phase 3C: User & Dashboard Integration** (Completed)
 * [x] **Phase 3D: Event & QR Scanning Integration** (Completed)
 * [x] **Phase 3E: Registration & Digital Pass Integration** (Completed)
+* [x] **Profile & Dashboard Physical-Device Fixes** (Completed)
 * [ ] **Phase 4: Frontend Screen Integration & Mock Replacement**
 * [ ] **Phase 5: End-to-End Testing & Physical Device Verification**
 
@@ -555,7 +579,7 @@ All listed features have been executed and verified on physical hardware & devel
 
 ## 18. Current Stopping Point
 
-> **Phase 3E Complete:** Registration submission and Digital Pass retrieval integrated with backend APIs (`POST /api/v1/registrations`, `GET /api/v1/passes/me`). Features typed Moshi DTOs, `RegistrationPurposeMapper`, `RegistrationRepository` with duplicate registration handling (409 Conflict), `DigitalPassRepository`, ZXing-based dynamic QR bitmap rendering in `DigitalPassActivity`, real holder data binding, interactive contact intents, loading and error retry states in `activity_digital_pass.xml`, and comprehensive MockWebServer tests. Android build clean (0 errors, 82/82 unit tests passing across 19 suites). Ready for Phase 4 upon user review.  
+> **Profile & Dashboard Physical-Device Fixes Complete:** Created dedicated `ProfileActivity` destination; wired bottom navigation bar and avatar triggers across activities; expanded profile editor to support all 6 fields with completion score weight breakdown (+20%, +20%, +20%, +15%, +15%, +10%); resolved 55% completion bug by exposing Full Name, LinkedIn, and Avatar fields; eliminated all hardcoded fake names ("Sarah Jenkins", "Elena Rodriguez", "ProPass User") in favor of dynamic user profile data; verified on physical device (`KVAMAAXSPNOV7PXC`). 96/96 unit tests passing across 21 suites. Clean debug build (`BUILD SUCCESSFUL`). Stopping for user review.  
 > *Updated on: September 4, 2026*
 
 
