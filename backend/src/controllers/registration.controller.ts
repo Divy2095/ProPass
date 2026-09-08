@@ -48,6 +48,27 @@ export class RegistrationController {
   }
 
   /**
+   * GET /api/v1/registrations/:id
+   */
+  static async getMyRegistrationById(req: FastifyRequest, reply: FastifyReply) {
+    try {
+      const userId = req.user!.userId;
+      const { id } = req.params as { id: string };
+      const registration = await RegistrationService.getMyRegistrationById(userId, id);
+
+      return reply.status(200).send({
+        success: true,
+        data: {
+          registration,
+        },
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error: any) {
+      return RegistrationController.handleError(error, reply);
+    }
+  }
+
+  /**
    * Standard error handler
    */
   private static handleError(error: any, reply: FastifyReply) {

@@ -347,4 +347,84 @@ class RegistrationRepositoryTest {
         val body = recorded.body.readUtf8()
         assertTrue(body.contains("\"answers\":[{\"questionId\":\"q-size\",\"value\":\"L\"},{\"questionId\":\"q-diet\",\"value\":\"Vegan\"}]"))
     }
+
+    @Test
+    fun getRegistrationById_success_200() = runBlocking {
+        val json = """
+            {
+                "success": true,
+                "data": {
+                    "registration": {
+                        "id": "reg-555",
+                        "userId": "usr-101",
+                        "eventId": "evt-202",
+                        "fullName": "Sarah Jenkins",
+                        "email": "sarah.jenkins@example.com",
+                        "institution": "TechFlow Inc.",
+                        "purpose": "GENERAL_ATTENDEE",
+                        "durationDays": 2,
+                        "status": "CONFIRMED",
+                        "registeredAt": "2026-09-08T10:00:00Z",
+                        "event": {
+                            "id": "evt-202",
+                            "slug": "ai-summit-2026",
+                            "title": "Global AI Summit",
+                            "description": "The premier AI conference"
+                        },
+                        "answers": [
+                            {
+                                "id": "ans-1",
+                                "questionId": "q-1",
+                                "value": "Vegan",
+                                "question": {
+                                    "id": "q-1",
+                                    "label": "Dietary Preference",
+                                    "type": "SINGLE_CHOICE",
+                                    "isRequired": true
+                                }
+                            }
+                        ]
+                    }
+                },
+                "timestamp": "2026-09-08T10:00:00Z"
+            }
+        """.trimIndent()
+
+        server.enqueue(MockResponse().setResponseCode(200).setBody(json))
+
+        val result = registrationRepository.getRegistrationById("reg-555")
+        assertTrue(result.isSuccess)
+        val reg = result.getOrNull()
+        assertNotNull(reg)
+        assertEquals("reg-555", reg!!.id)
+        assertEquals("Global AI Summit", reg.event?.title)
+        assertEquals("The premier AI conference", reg.event?.description)
+        assertEquals(1, reg.answers.size)
+        assertEquals("Dietary Preference", reg.answers[0].displayLabel)
+        assertEquals("Vegan", reg.answers[0].value)
+        assertTrue(reg.answers[0].isRequired)
+
+        val recorded = server.takeRequest()
+        assertEquals("/api/v1/registrations/reg-555", recorded.path)
+        assertEquals("GET", recorded.method)
+    }
+
+    @Test
+    fun getRegistrationById_notFound_404() = runBlocking {
+        val json = """
+            {
+                "success": false,
+                "error": "Not Found",
+                "message": "Registration not found",
+                "statusCode": 404,
+                "timestamp": "2026-09-08T10:00:00Z"
+            }
+        """.trimIndent()
+
+        server.enqueue(MockResponse().setResponseCode(404).setBody(json))
+
+        val result = registrationRepository.getRegistrationById("reg-nonexistent")
+        assertFalse(result.isSuccess)
+        assertEquals("Registration not found", result.exceptionOrNull()?.message)
+    }
 }

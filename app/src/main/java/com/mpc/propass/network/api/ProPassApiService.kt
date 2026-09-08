@@ -98,6 +98,11 @@ interface ProPassApiService {
     @GET("api/v1/registrations/my")
     suspend fun getMyRegistrations(): Response<ApiResponse<com.mpc.propass.network.model.MyRegistrationsResponseData>>
 
+    @GET("api/v1/registrations/{registrationId}")
+    suspend fun getRegistrationById(
+        @retrofit2.http.Path("registrationId") registrationId: String
+    ): Response<ApiResponse<com.mpc.propass.network.model.RegistrationDetailResponseData>>
+
     // ==========================================
     // Digital Pass (Phase 2E)
     // ==========================================

@@ -530,5 +530,53 @@ describe('Registration API (Phase 2D)', () => {
       await prisma.registration.deleteMany({ where: { eventId: event.id } });
       await prisma.event.delete({ where: { id: event.id } });
     });
+
+    it('23. Authenticated user can fetch their specific registration via GET /api/v1/registrations/:id', async () => {
+      // Get registrations list for User A first
+      const myRes = await app.inject({
+        method: 'GET',
+        url: '/api/v1/registrations/my',
+        headers: { authorization: `Bearer ${tokenA}` },
+      });
+      const myBody = JSON.parse(myRes.body);
+      const firstReg = myBody.data.registrations[0];
+
+      const res = await app.inject({
+        method: 'GET',
+        url: `/api/v1/registrations/${firstReg.id}`,
+        headers: { authorization: `Bearer ${tokenA}` },
+      });
+
+      expect(res.statusCode).toBe(200);
+      const body = JSON.parse(res.body);
+      expect(body.success).toBe(true);
+      expect(body.data.registration.id).toBe(firstReg.id);
+      expect(body.data.registration.userId).toBe(userIdA);
+      expect(body.data.registration.event).toBeDefined();
+      expect(body.data.registration.event.title).toBeDefined();
+    });
+
+    it('24. Fetching another user registration via GET /api/v1/registrations/:id returns 404 Not Found', async () => {
+      // User A's registration
+      const myRes = await app.inject({
+        method: 'GET',
+        url: '/api/v1/registrations/my',
+        headers: { authorization: `Bearer ${tokenA}` },
+      });
+      const myBody = JSON.parse(myRes.body);
+      const userAReg = myBody.data.registrations[0];
+
+      // User B tries to fetch User A's registration
+      const res = await app.inject({
+        method: 'GET',
+        url: `/api/v1/registrations/${userAReg.id}`,
+        headers: { authorization: `Bearer ${tokenB}` },
+      });
+
+      expect(res.statusCode).toBe(404);
+      const body = JSON.parse(res.body);
+      expect(body.success).toBe(false);
+      expect(body.message).toContain('not found');
+    });
   });
 });

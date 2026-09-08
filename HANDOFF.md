@@ -831,6 +831,37 @@ Following manual testing on a physical device, 4 critical issues were identified
   * **Manifest Wiring:**
     * In [`app/src/main/AndroidManifest.xml`](file:///home/divy/AndroidProjects/ProPass/app/src/main/AndroidManifest.xml): Updated `<application>` tag attributes `android:icon="@mipmap/ic_propass_launcher"` and `android:roundIcon="@mipmap/ic_propass_launcher_round"`.
 
+### 13. Issue 13 — Product Polish, Attendee Registration Details Flow & Resilient States
+* **Problem:**
+  * In `HomeDashboardActivity`, tapping recent activity items either displayed a simple Toast or had static fallback behavior. The attendee had no dedicated screen to inspect event details, registration status, or submitted custom form answers.
+  * Backend endpoints returned minimal event fields in `getMyRegistrations` (omitting `description`, `location`, `date`, `startTime`, `endTime`, `isActive`, `maxDuration`) and omitted question metadata on registration answers.
+  * Single registration lookup by ID (`GET /api/v1/registrations/:id`) was missing, forcing clients to rely solely on array lookups.
+  * Empty and error states in Recent Activity and Profile lacked actionable retry controls.
+* **Fix & Architecture:**
+  * **Backend Enhancements (`registration.service.ts`, `registration.controller.ts`, `registration.routes.ts`):**
+    * Added `getMyRegistrationById(userId: string, registrationId: string)` enforcing tenant and user isolation (`where: { id: registrationId, userId }`).
+    * Enriched Prisma `select` clauses in `getMyRegistrations` and `createRegistration` with full event metadata (`description`, `location`, `startDate`, `endDate`, `date`, `startTime`, `endTime`, `maxDuration`, `isActive`) and question metadata (`isRequired`, `options`, `orderIndex` sorted by `orderIndex: 'asc'`).
+    * Added automated integration tests for `GET /api/v1/registrations/:id` verifying successful lookup and strict 404 tenant isolation.
+  * **Android Registration Details Screen (`AttendeeRegistrationDetailActivity`):**
+    * Created [`AttendeeRegistrationDetailActivity.kt`](file:///home/divy/AndroidProjects/ProPass/app/src/main/java/com/mpc/propass/AttendeeRegistrationDetailActivity.kt) and [`activity_attendee_registration_detail.xml`](file:///home/divy/AndroidProjects/ProPass/app/src/main/res/layout/activity_attendee_registration_detail.xml).
+    * Fixed translucent top app bar with back navigation and title/subtitle.
+    * Header card with category overline, event title, confirmed status badge, and active status chip (`bg_tag_chip.xml`).
+    * Event details card: Description (only rendered if backend provides one; hidden if blank without inventing fake text), formatted event date, time range, and location venue.
+    * Registration details card: Attendee name, email, institution, registration date/time, expected duration, purpose of visit, and vehicle registration (hidden if not provided).
+    * Custom responses card: Dynamically inflates submitted answers with question labels (`displayLabel`), required badges, and formatted values (handling multi-select arrays, comma-separated lists, and multi-line text).
+    * Action buttons: "View Pass" navigating to `DigitalPassActivity` and "Back to Dashboard".
+    * Loading progress bar and error state card with retry button. Registered in `AndroidManifest.xml`.
+  * **Attendee Dashboard Recent Activity Improvements (`HomeDashboardActivity.kt`, `activity_home_dashboard.xml`):**
+    * Added `tvActivity1Type` and `tvActivity2Type` with uppercase category/date format (`EVENT REGISTRATION • MMM d, yyyy`).
+    * Subtitles formatted with purpose, location, and registration status.
+    * Tapping any recent activity item opens `AttendeeRegistrationDetailActivity` passing `EXTRA_REGISTRATION_ID`, `EXTRA_EVENT_ID`, and `EXTRA_EVENT_SLUG`.
+    * Added `layoutRecentActivityEmpty` ("No Recent Activity", "Your event registrations will appear here.") for 0 registrations.
+    * Added `layoutRecentActivityError` with friendly error message and `btnRecentActivityRetry`.
+  * **General UI Polish:**
+    * In `ProfileActivity.kt`: Added `Snackbar` with `action_retry` on profile load failures.
+    * In `strings.xml`: Updated `publish_mock_badge` to "Active Event • Saved to Cloud" and `publish_success_desc` to remove prototype/mock mentions.
+    * In `EventPublishSuccessActivity.kt`: Bound `tvMockBadge` dynamically.
+
 ---
 
 ## 18. Development Roadmap
@@ -856,23 +887,24 @@ Following manual testing on a physical device, 4 critical issues were identified
 * [x] **Phase 5 Bug Fixes: Batch 2 (4 Issues)** (Completed)
 * [x] **Phase 5 Bug Fixes: Batch 3 (Registration Polish & Session Resilience)** (Completed)
 * [x] **Launcher Icon Polish: ProPass QR Logo Asset Configured** (Completed)
+* [x] **Product Polish: Attendee Registration Details, Empty/Error States & Real Data Quality** (Completed)
 * [ ] **Phase 5 End-to-End Physical-Device Verification**
 
 ---
 
 ## 19. Current Stopping Point
 
-> **Launcher Icon Polish & Phase 5 Fixes Complete:**
-> 1. **Launcher Icon Replacement:** Replaced default Android robot icon with official ProPass QR-code badge asset (`ic_propass_logo.png`). Built full adaptive icon set (`ic_launcher_background.xml` `#FFFFFF`, `ic_launcher_foreground.xml` with 14dp safe-zone inset, `ic_propass_launcher` and `ic_propass_launcher_round` for both `mipmap-anydpi-v26` and legacy `mipmap`), wired cleanly into `AndroidManifest.xml`.
-> 2. **Removal of Legacy Registration Fields:** The attendee registration form hides legacy prototype fields and accepts clean defaults on the backend (`purpose: 'GENERAL_ATTENDEE'`, `durationDays: 1`). Review screen hides empty/default legacy cards.
-> 3. **Session Persistence & Transparent Refresh:** Resolved random logout after app restarts and 15-minute access token expiry with `TokenAuthenticator` for transparent 401 refresh, eager startup cache loading in `TokenStorage`, and checking 7-day refresh tokens.
-> 4. **Registration Flow & Stack Clearance:** "Back to Home" and hardware back button in `RegistrationSuccessActivity` cleanly route to `HomeDashboardActivity` clearing the form stack. 409 duplicate registrations present an interactive dialog.
-> 5. **Pass Validity Period:** Verified that issued passes are guaranteed valid for 1 full year from creation.
-> 6. **Organizer Mode Switching:** Verified seamless, role-preserving switching between Organizer and Attendee modes without session loss or database mutation.
+> **Product Polish & Attendee Registration Details Complete:**
+> 1. **Attendee Registration Detail Flow:** Implemented `AttendeeRegistrationDetailActivity` allowing attendees to tap any item in "Recent Activity" on `HomeDashboardActivity` to view complete event details, description, schedule, venue, attendee registration data, and submitted custom form question answers.
+> 2. **Tenant Isolation & Single Lookup API:** Added `GET /api/v1/registrations/:id` with strict user tenancy isolation. Enriched registration queries to include event description, timing, and question labels.
+> 3. **Empty / Loading / Error States:** Added clean empty states ("No Recent Activity") and error views with retry buttons on `HomeDashboardActivity` and `ProfileActivity`.
+> 4. **Strings & UI Polish:** Cleaned up prototype/mock strings in `strings.xml` and `EventPublishSuccessActivity.kt`. Replaced hardcoded text in dashboard layouts with dynamic binding and `tools:` attributes.
+> 5. **Role Preservation:** Verified role-based navigation and UI visibility (attendee sees no organizer portal, organizer can switch between modes seamlessly).
 >
 > **Verification Status:**
-> - Android Unit Tests: All 142 unit tests passed across 27 test suites (`./gradlew testDebugUnitTest`).
+> - Android Unit Tests: All unit tests passed cleanly across 27 test suites (`./gradlew testDebugUnitTest`).
 > - Debug APK Build: `BUILD SUCCESSFUL` (`./gradlew assembleDebug`).
-> - Backend Vitest Tests: All 125 tests passed across 10 suites (`npm test`).
+> - Backend Vitest Tests: All 127 tests passed across 10 suites (`npm test`).
+> - Backend Build: `tsc` compiled cleanly (`npm run build`).
 > - Git checks: `git diff --check` clean with 0 whitespace issues. Zero ADB, zero emulator commands executed. No git commit or push performed.
 > *Updated on: September 8, 2026*

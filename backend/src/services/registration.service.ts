@@ -265,9 +265,15 @@ export class RegistrationService {
               title: true,
               overline: true,
               subtitle: true,
+              description: true,
               location: true,
               startDate: true,
               endDate: true,
+              date: true,
+              startTime: true,
+              endTime: true,
+              isActive: true,
+              maxDuration: true,
             },
           },
           answers: {
@@ -277,7 +283,15 @@ export class RegistrationService {
                   id: true,
                   label: true,
                   type: true,
+                  isRequired: true,
+                  options: true,
+                  orderIndex: true,
                 },
+              },
+            },
+            orderBy: {
+              question: {
+                orderIndex: 'asc',
               },
             },
           },
@@ -303,9 +317,15 @@ export class RegistrationService {
             title: true,
             overline: true,
             subtitle: true,
+            description: true,
             location: true,
             startDate: true,
             endDate: true,
+            date: true,
+            startTime: true,
+            endTime: true,
+            isActive: true,
+            maxDuration: true,
           },
         },
         answers: {
@@ -315,7 +335,15 @@ export class RegistrationService {
                 id: true,
                 label: true,
                 type: true,
+                isRequired: true,
+                options: true,
+                orderIndex: true,
               },
+            },
+          },
+          orderBy: {
+            question: {
+              orderIndex: 'asc',
             },
           },
         },
@@ -323,6 +351,66 @@ export class RegistrationService {
     });
 
     return registrations;
+  }
+
+  /**
+   * Retrieves a single event registration by ID for the authenticated user.
+   */
+  static async getMyRegistrationById(userId: string, registrationId: string) {
+    const cleanId = registrationId.trim();
+    const registration = await prisma.registration.findFirst({
+      where: {
+        id: cleanId,
+        userId,
+      },
+      include: {
+        event: {
+          select: {
+            id: true,
+            slug: true,
+            title: true,
+            overline: true,
+            subtitle: true,
+            description: true,
+            location: true,
+            startDate: true,
+            endDate: true,
+            date: true,
+            startTime: true,
+            endTime: true,
+            isActive: true,
+            maxDuration: true,
+          },
+        },
+        answers: {
+          include: {
+            question: {
+              select: {
+                id: true,
+                label: true,
+                type: true,
+                isRequired: true,
+                options: true,
+                orderIndex: true,
+              },
+            },
+          },
+          orderBy: {
+            question: {
+              orderIndex: 'asc',
+            },
+          },
+        },
+      },
+    });
+
+    if (!registration) {
+      const error: any = new Error('Registration not found');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    return registration;
   }
 
   /**

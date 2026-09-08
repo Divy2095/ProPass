@@ -163,4 +163,71 @@ class RegistrationResponseParsingTest {
         assertEquals("Media/Press", RegistrationPurposeMapper.toFriendlyDisplay("MEDIA_PRESS"))
         assertEquals("General Attendee", RegistrationPurposeMapper.toFriendlyDisplay(null))
     }
+
+    @Test
+    fun parseRegistrationDetailResponse_withAnswersAndQuestionMeta() {
+        val json = """
+            {
+                "success": true,
+                "data": {
+                    "registration": {
+                        "id": "reg-999",
+                        "userId": "usr-888",
+                        "eventId": "evt-777",
+                        "fullName": "Alice Walker",
+                        "email": "alice@example.com",
+                        "institution": "Stanford",
+                        "purpose": "SPEAKER",
+                        "durationDays": 2,
+                        "vehicleNumber": "SF-9912",
+                        "status": "CONFIRMED",
+                        "registeredAt": "2026-09-08T12:00:00Z",
+                        "event": {
+                            "id": "evt-777",
+                            "slug": "ai-con-2026",
+                            "title": "AI Con 2026",
+                            "description": "Annual AI Conference",
+                            "location": "San Jose, CA",
+                            "date": "2026-11-10",
+                            "startTime": "09:00 AM",
+                            "endTime": "05:00 PM"
+                        },
+                        "answers": [
+                            {
+                                "id": "ans-1",
+                                "questionId": "q-diet",
+                                "value": "Vegan",
+                                "question": {
+                                    "id": "q-diet",
+                                    "label": "Dietary Requirements",
+                                    "type": "SINGLE_CHOICE",
+                                    "isRequired": true,
+                                    "options": ["Vegan", "Vegetarian", "None"],
+                                    "orderIndex": 0
+                                }
+                            }
+                        ]
+                    }
+                },
+                "timestamp": "2026-09-08T12:00:00Z"
+            }
+        """.trimIndent()
+
+        val type = Types.newParameterizedType(ApiResponse::class.java, com.mpc.propass.network.model.RegistrationDetailResponseData::class.java)
+        val adapter = moshi.adapter<ApiResponse<com.mpc.propass.network.model.RegistrationDetailResponseData>>(type)
+        val response = adapter.fromJson(json)
+
+        assertNotNull(response)
+        assertTrue(response!!.success)
+        val reg = response.data?.registration
+        assertNotNull(reg)
+        assertEquals("reg-999", reg!!.id)
+        assertEquals("AI Con 2026", reg.event?.title)
+        assertEquals("Annual AI Conference", reg.event?.description)
+        assertEquals("San Jose, CA", reg.event?.location)
+        assertEquals(1, reg.answers.size)
+        assertEquals("Dietary Requirements", reg.answers[0].displayLabel)
+        assertEquals("Vegan", reg.answers[0].value)
+        assertTrue(reg.answers[0].isRequired)
+    }
 }

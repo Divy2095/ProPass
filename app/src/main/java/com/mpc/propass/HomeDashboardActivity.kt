@@ -28,10 +28,14 @@ import com.mpc.propass.data.repository.AuthRepository
 import com.mpc.propass.data.repository.DashboardRepository
 import com.mpc.propass.data.repository.UserRepository
 import com.mpc.propass.network.model.AuthUserDto
+import com.mpc.propass.network.model.DashboardRecentActivityDto
 import com.mpc.propass.network.model.DashboardResponseData
 import com.mpc.propass.network.model.UpdateProfileRequest
 import com.mpc.propass.network.model.UserProfileDto
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.TimeZone
 
 /**
  * Home Dashboard screen implementation for ProPass Digital Identity System.
@@ -81,12 +85,18 @@ class HomeDashboardActivity : AppCompatActivity() {
 
     // Recent Activity items
     private lateinit var itemActivity1: MaterialCardView
+    private lateinit var tvActivity1Type: TextView
     private lateinit var tvActivity1Title: TextView
     private lateinit var tvActivity1Subtitle: TextView
     private lateinit var itemActivity2: MaterialCardView
+    private lateinit var tvActivity2Type: TextView
     private lateinit var tvActivity2Title: TextView
     private lateinit var tvActivity2Subtitle: TextView
+    private lateinit var layoutRecentActivityEmpty: LinearLayout
     private lateinit var tvNoRecentActivity: TextView
+    private lateinit var layoutRecentActivityError: LinearLayout
+    private lateinit var tvRecentActivityErrorMessage: TextView
+    private lateinit var btnRecentActivityRetry: MaterialButton
 
     // Bottom Navigation tabs
     private lateinit var tabHome: LinearLayout
@@ -160,12 +170,18 @@ class HomeDashboardActivity : AppCompatActivity() {
 
         // Recent Activity
         itemActivity1 = findViewById(R.id.itemActivity1)
+        tvActivity1Type = findViewById(R.id.tvActivity1Type)
         tvActivity1Title = findViewById(R.id.tvActivity1Title)
         tvActivity1Subtitle = findViewById(R.id.tvActivity1Subtitle)
         itemActivity2 = findViewById(R.id.itemActivity2)
+        tvActivity2Type = findViewById(R.id.tvActivity2Type)
         tvActivity2Title = findViewById(R.id.tvActivity2Title)
         tvActivity2Subtitle = findViewById(R.id.tvActivity2Subtitle)
+        layoutRecentActivityEmpty = findViewById(R.id.layoutRecentActivityEmpty)
         tvNoRecentActivity = findViewById(R.id.tvNoRecentActivity)
+        layoutRecentActivityError = findViewById(R.id.layoutRecentActivityError)
+        tvRecentActivityErrorMessage = findViewById(R.id.tvRecentActivityErrorMessage)
+        btnRecentActivityRetry = findViewById(R.id.btnRecentActivityRetry)
 
         // Navigation
         tabHome = findViewById(R.id.tabHome)
@@ -263,39 +279,34 @@ class HomeDashboardActivity : AppCompatActivity() {
         }
 
         // 4. Recent Activity
+        layoutRecentActivityError.visibility = View.GONE
         val activities = data.recentActivity
         if (activities.isEmpty()) {
             itemActivity1.visibility = View.GONE
             itemActivity2.visibility = View.GONE
-            tvNoRecentActivity.visibility = View.VISIBLE
+            layoutRecentActivityEmpty.visibility = View.VISIBLE
         } else {
-            tvNoRecentActivity.visibility = View.GONE
+            layoutRecentActivityEmpty.visibility = View.GONE
 
             // Item 1
             val act1 = activities[0]
             itemActivity1.visibility = View.VISIBLE
+            tvActivity1Type.text = formatActivityType(act1.registeredAt)
             tvActivity1Title.text = act1.eventTitle
-            tvActivity1Subtitle.text = formatActivitySubtitle(act1.purpose, act1.eventLocation)
+            tvActivity1Subtitle.text = formatActivitySubtitle(act1.purpose, act1.eventLocation, act1.status)
             itemActivity1.setOnClickListener {
-                Toast.makeText(
-                    this,
-                    "${act1.eventTitle} (${act1.status})",
-                    Toast.LENGTH_SHORT
-                ).show()
+                openRegistrationDetail(act1)
             }
 
             // Item 2
             if (activities.size > 1) {
                 val act2 = activities[1]
                 itemActivity2.visibility = View.VISIBLE
+                tvActivity2Type.text = formatActivityType(act2.registeredAt)
                 tvActivity2Title.text = act2.eventTitle
-                tvActivity2Subtitle.text = formatActivitySubtitle(act2.purpose, act2.eventLocation)
+                tvActivity2Subtitle.text = formatActivitySubtitle(act2.purpose, act2.eventLocation, act2.status)
                 itemActivity2.setOnClickListener {
-                    Toast.makeText(
-                        this,
-                        "${act2.eventTitle} (${act2.status})",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    openRegistrationDetail(act2)
                 }
             } else {
                 itemActivity2.visibility = View.GONE
@@ -307,7 +318,25 @@ class HomeDashboardActivity : AppCompatActivity() {
         containerOrganizerPortal.visibility = if (isOrganizer) View.VISIBLE else View.GONE
     }
 
-    private fun formatActivitySubtitle(purpose: String?, location: String?): String {
+    private fun openRegistrationDetail(activity: DashboardRecentActivityDto) {
+        val intent = Intent(this, AttendeeRegistrationDetailActivity::class.java).apply {
+            putExtra(AttendeeRegistrationDetailActivity.EXTRA_REGISTRATION_ID, activity.registrationId)
+            putExtra(AttendeeRegistrationDetailActivity.EXTRA_EVENT_ID, activity.eventId)
+            putExtra(AttendeeRegistrationDetailActivity.EXTRA_EVENT_SLUG, activity.eventSlug)
+        }
+        startActivity(intent)
+    }
+
+    private fun formatActivityType(registeredAt: String?): String {
+        val dateFormatted = registeredAt?.let { parseAndFormatDate(it) }
+        return if (!dateFormatted.isNullOrBlank()) {
+            "EVENT REGISTRATION • $dateFormatted".uppercase()
+        } else {
+            "EVENT REGISTRATION"
+        }
+    }
+
+    private fun formatActivitySubtitle(purpose: String?, location: String?, status: String?): String {
         val purposeFormatted = purpose
             ?.replace('_', ' ')
             ?.lowercase()
@@ -315,10 +344,44 @@ class HomeDashboardActivity : AppCompatActivity() {
             ?.joinToString(" ") { word -> word.replaceFirstChar { it.uppercase() } }
             ?: "Attendee"
 
+        val statusText = status?.takeIf { it.isNotBlank() }
+            ?.lowercase()
+            ?.replaceFirstChar { it.uppercase() }
+            ?: "Confirmed"
+
         return if (!location.isNullOrBlank()) {
-            "$purposeFormatted • $location"
+            "$purposeFormatted • $location • $statusText"
         } else {
-            purposeFormatted
+            "$purposeFormatted • $statusText"
+        }
+    }
+
+    private fun parseAndFormatDate(isoString: String): String? {
+        return try {
+            val isoFormats = arrayOf(
+                SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply {
+                    timeZone = TimeZone.getTimeZone("UTC")
+                },
+                SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
+                    timeZone = TimeZone.getTimeZone("UTC")
+                },
+                SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS", Locale.US),
+                SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US),
+                SimpleDateFormat("yyyy-MM-dd", Locale.US)
+            )
+            var date: java.util.Date? = null
+            for (format in isoFormats) {
+                try {
+                    date = format.parse(isoString)
+                    if (date != null) break
+                } catch (_: Exception) {}
+            }
+            if (date != null) {
+                val outFormat = SimpleDateFormat("MMM d, yyyy", Locale.US)
+                outFormat.format(date)
+            } else null
+        } catch (_: Exception) {
+            null
         }
     }
 
@@ -339,6 +402,12 @@ class HomeDashboardActivity : AppCompatActivity() {
             finish()
             return
         }
+
+        layoutRecentActivityError.visibility = View.VISIBLE
+        itemActivity1.visibility = View.GONE
+        itemActivity2.visibility = View.GONE
+        layoutRecentActivityEmpty.visibility = View.GONE
+        tvRecentActivityErrorMessage.text = message
 
         Snackbar.make(homeDashboardRoot, message, Snackbar.LENGTH_INDEFINITE)
             .setAction(R.string.action_retry) {
@@ -418,6 +487,10 @@ class HomeDashboardActivity : AppCompatActivity() {
 
         itemActivity1.setOnTouchListener(touchListener98)
         itemActivity2.setOnTouchListener(touchListener98)
+
+        btnRecentActivityRetry.setOnClickListener {
+            loadDashboardData()
+        }
 
         fabScan.setOnTouchListener(touchListener95)
         fabScan.setOnClickListener {

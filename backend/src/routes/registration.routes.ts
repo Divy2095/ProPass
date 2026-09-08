@@ -8,4 +8,7 @@ export async function registrationRoutes(fastify: FastifyInstance) {
 
   // Retrieve current user's event registrations (Authenticated)
   fastify.get('/my', { preHandler: authenticate }, RegistrationController.getMyRegistrations);
+
+  // Retrieve specific event registration details for the attendee (Authenticated)
+  fastify.get('/:id', { preHandler: authenticate }, RegistrationController.getMyRegistrationById);
 }

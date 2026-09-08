@@ -49,6 +49,7 @@ class EventPublishSuccessActivity : AppCompatActivity() {
     private lateinit var tvEventDateTime: TextView
     private lateinit var tvEventLocation: TextView
     private lateinit var tvEventFieldsCount: TextView
+    private lateinit var tvMockBadge: TextView
     private lateinit var btnBackToDashboard: MaterialButton
 
     private var event: OrganizerEvent? = null
@@ -96,6 +97,7 @@ class EventPublishSuccessActivity : AppCompatActivity() {
         tvEventDateTime = findViewById(R.id.tvEventDateTime)
         tvEventLocation = findViewById(R.id.tvEventLocation)
         tvEventFieldsCount = findViewById(R.id.tvEventFieldsCount)
+        tvMockBadge = findViewById(R.id.tvMockBadge)
         btnBackToDashboard = findViewById(R.id.btnBackToDashboard)
 
         val root = findViewById<View>(R.id.publishSuccessRoot)
@@ -127,12 +129,14 @@ class EventPublishSuccessActivity : AppCompatActivity() {
             tvTopBarTitle.text = getString(R.string.organizer_portal_title)
             tvPublishTitle.text = currentEvent.name
             tvPublishSubtitle.text = "Share this ProPass QR code with attendees to allow instant registration."
+            tvMockBadge.text = "Active Event • Published"
             ivPublishBadgeIcon.setImageResource(R.drawable.ic_badge)
             ivPublishBadgeIcon.setColorFilter(ContextCompat.getColor(this, R.color.primary))
         } else {
             tvTopBarTitle.text = getString(R.string.publish_success_title)
             tvPublishTitle.text = getString(R.string.publish_success_title)
             tvPublishSubtitle.text = getString(R.string.publish_success_desc)
+            tvMockBadge.text = getString(R.string.publish_mock_badge)
             ivPublishBadgeIcon.setImageResource(R.drawable.ic_check)
             ivPublishBadgeIcon.setColorFilter(Color.parseColor("#4CAF50"))
         }

@@ -33,6 +33,8 @@ interface RegistrationRepository {
     ): Result<CreateRegistrationResponseData>
 
     suspend fun getMyRegistrations(): Result<List<RegistrationDto>>
+
+    suspend fun getRegistrationById(registrationId: String): Result<RegistrationDto>
 }
 
 /**
@@ -128,6 +130,43 @@ class RegistrationRepositoryImpl(
                 }
             }
         } catch (e: Exception) {
+            Result.failure(resolveNetworkException(e))
+        }
+    }
+
+    override suspend fun getRegistrationById(registrationId: String): Result<RegistrationDto> {
+        val trimmedId = registrationId.trim()
+        if (trimmedId.isEmpty()) {
+            return Result.failure(RegistrationValidationException("Registration ID cannot be empty"))
+        }
+
+        return try {
+            val response = apiService.getRegistrationById(trimmedId)
+            if (response.isSuccessful && response.body()?.success == true) {
+                val data = response.body()?.data
+                if (data?.registration != null) {
+                    Result.success(data.registration)
+                } else {
+                    Result.failure(RegistrationNotFoundException("Registration record not found"))
+                }
+            } else {
+                val errorMsg = parseErrorMessage(response.errorBody()?.string())
+                    ?: response.body()?.message
+                when (response.code()) {
+                    401 -> Result.failure(RegistrationAuthException(errorMsg ?: "Authentication required. Please sign in."))
+                    404 -> Result.failure(RegistrationNotFoundException(errorMsg ?: "Registration not found"))
+                    else -> Result.failure(Exception(errorMsg ?: "Failed to retrieve registration details (${response.code()})"))
+                }
+            }
+        } catch (e: Exception) {
+            // Resilient fallback: search getMyRegistrations() cache/network
+            val fallback = getMyRegistrations()
+            if (fallback.isSuccess) {
+                val match = fallback.getOrNull()?.find { it.id == trimmedId || it.eventId == trimmedId || it.event?.slug == trimmedId }
+                if (match != null) {
+                    return Result.success(match)
+                }
+            }
             Result.failure(resolveNetworkException(e))
         }
     }

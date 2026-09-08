@@ -281,11 +281,12 @@ class ProfileActivity : AppCompatActivity() {
                 cachedProfile = data.profile
                 bindProfileData(data.user, data.profile)
             }.onFailure { error ->
-                Toast.makeText(
-                    this@ProfileActivity,
-                    error.message ?: getString(R.string.error_profile_load_failed),
-                    Toast.LENGTH_SHORT
-                ).show()
+                val msg = error.message ?: getString(R.string.error_profile_load_failed)
+                com.google.android.material.snackbar.Snackbar.make(profileRoot, msg, com.google.android.material.snackbar.Snackbar.LENGTH_LONG)
+                    .setAction(R.string.action_retry) {
+                        loadProfileData()
+                    }
+                    .show()
             }
         }
     }

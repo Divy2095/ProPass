@@ -269,8 +269,8 @@
     <string name="btn_publish_event">Publish Event</string>
 
     <string name="publish_success_title">Event Published!</string>
-    <string name="publish_success_desc">Your event is live in local organizer session. Attendees can scan the code below to register.</string>
-    <string name="publish_mock_badge">Local Demo State • Saved locally</string>
+    <string name="publish_success_desc">Your event is live. Attendees can scan the code below to register.</string>
+    <string name="publish_mock_badge">Active Event • Saved to Cloud</string>
     <string name="btn_view_dashboard">Back to Organizer Dashboard</string>
     <string name="qr_scan_caption">Scan QR code with ProPass Scanner</string>
 </resources>

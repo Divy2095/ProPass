@@ -4,12 +4,36 @@ import com.squareup.moshi.Json
 import java.io.Serializable
 
 /**
+ * Summary of the question definition attached to an attendee registration answer.
+ */
+data class RegistrationQuestionSummaryDto(
+    @field:Json(name = "id") val id: String = "",
+    @field:Json(name = "label") val label: String = "",
+    @field:Json(name = "type") val type: String = "SHORT_TEXT",
+    @field:Json(name = "isRequired") val isRequired: Boolean = false,
+    @field:Json(name = "options") val options: List<String> = emptyList(),
+    @field:Json(name = "orderIndex") val orderIndex: Int = 0
+) : Serializable
+
+/**
  * Dynamic registration answer submitted by attendee for an organizer-defined form question.
  */
 data class RegistrationAnswerDto(
-    @field:Json(name = "questionId") val questionId: String,
-    @field:Json(name = "value") val value: String
-) : Serializable
+    @field:Json(name = "id") val id: String? = null,
+    @field:Json(name = "questionId") val questionId: String = "",
+    @field:Json(name = "value") val value: String = "",
+    @field:Json(name = "question") val question: RegistrationQuestionSummaryDto? = null,
+    @field:Json(name = "questionLabel") val questionLabel: String? = null,
+    @field:Json(name = "questionType") val questionType: String? = null
+) : Serializable {
+    val displayLabel: String
+        get() = question?.label?.takeIf { it.isNotBlank() }
+            ?: questionLabel?.takeIf { it.isNotBlank() }
+            ?: questionId
+
+    val isRequired: Boolean
+        get() = question?.isRequired ?: false
+}
 
 /**
  * Request payload for POST /api/v1/registrations.
@@ -34,9 +58,15 @@ data class RegistrationEventDto(
     @field:Json(name = "title") val title: String = "",
     @field:Json(name = "overline") val overline: String? = null,
     @field:Json(name = "subtitle") val subtitle: String? = null,
-    @field:Json(name = "location") val location: String = "",
-    @field:Json(name = "startDate") val startDate: String = "",
-    @field:Json(name = "endDate") val endDate: String = ""
+    @field:Json(name = "description") val description: String? = null,
+    @field:Json(name = "location") val location: String? = null,
+    @field:Json(name = "startDate") val startDate: String? = null,
+    @field:Json(name = "endDate") val endDate: String? = null,
+    @field:Json(name = "date") val date: String? = null,
+    @field:Json(name = "startTime") val startTime: String? = null,
+    @field:Json(name = "endTime") val endTime: String? = null,
+    @field:Json(name = "maxDuration") val maxDuration: Int = 1,
+    @field:Json(name = "isActive") val isActive: Boolean = true
 ) : Serializable
 
 /**
@@ -71,6 +101,13 @@ data class CreateRegistrationResponseData(
 data class MyRegistrationsResponseData(
     @field:Json(name = "registrations") val registrations: List<RegistrationDto> = emptyList(),
     @field:Json(name = "count") val count: Int? = null
+)
+
+/**
+ * Response data for GET /api/v1/registrations/:id.
+ */
+data class RegistrationDetailResponseData(
+    @field:Json(name = "registration") val registration: RegistrationDto
 )
 
 /**
