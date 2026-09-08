@@ -10,6 +10,7 @@ import android.view.animation.OvershootInterpolator
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
@@ -127,7 +128,10 @@ class RegistrationSuccessActivity : AppCompatActivity() {
         }
 
         tvSuccessEventTitle.text = data.eventName
-        tvSuccessAttendeeName.text = "${data.fullName} • ${data.purpose}"
+        val isDefaultOrEmptyPurpose = data.purpose.isBlank() ||
+            data.purpose.equals("General Attendee", ignoreCase = true) ||
+            data.purpose.equals("GENERAL_ATTENDEE", ignoreCase = true)
+        tvSuccessAttendeeName.text = if (isDefaultOrEmptyPurpose) data.fullName else "${data.fullName} • ${data.purpose}"
     }
 
     private fun animateSuccessBadge() {
@@ -145,6 +149,17 @@ class RegistrationSuccessActivity : AppCompatActivity() {
     }
 
     private fun setupInteractions() {
+        // Intercept back press to route cleanly back to HomeDashboardActivity
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                val intent = Intent(this@RegistrationSuccessActivity, HomeDashboardActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                }
+                startActivity(intent)
+                finish()
+            }
+        })
+
         val touchListener98 = View.OnTouchListener { v, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> v.animate().scaleX(0.98f).scaleY(0.98f).setDuration(100).start()

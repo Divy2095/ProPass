@@ -227,6 +227,7 @@
 
             <!-- Card 2: Visit Details -->
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardVisitDetails"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="24dp"

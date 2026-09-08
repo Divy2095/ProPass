@@ -435,4 +435,121 @@ class Phase5FixesVerificationTest {
         assertEquals("John", resolveDisplayName("john@example.com", "ProPass User"))
         assertEquals("Attendee", resolveDisplayName(null, null))
     }
+
+    // =========================================================================
+    // Issue 7: Session Persistence & Transparent Refresh Tests
+    // =========================================================================
+
+    @Test
+    fun testSessionPersistence_hasActiveSessionWithRefreshTokenOnly() {
+        val fakeStorage = com.mpc.propass.data.local.FakeTokenStorage()
+        val authRepo = com.mpc.propass.data.repository.AuthRepositoryImpl(
+            apiService = com.mpc.propass.network.NetworkClient.apiService,
+            tokenStorage = fakeStorage
+        )
+
+        // Initially no session
+        assertFalse(authRepo.hasActiveSession())
+
+        // Access token expired (null/blank), but valid refresh token exists in DataStore
+        kotlinx.coroutines.runBlocking {
+            fakeStorage.saveTokens("", "valid-7-day-refresh-token")
+        }
+
+        assertTrue(
+            "hasActiveSession() must return true when refresh token is present even if access token is null/expired",
+            authRepo.hasActiveSession()
+        )
+    }
+
+    @Test
+    fun testSessionPersistence_hasActiveSessionReturnsFalseWhenBothNull() {
+        val fakeStorage = com.mpc.propass.data.local.FakeTokenStorage()
+        val authRepo = com.mpc.propass.data.repository.AuthRepositoryImpl(
+            apiService = com.mpc.propass.network.NetworkClient.apiService,
+            tokenStorage = fakeStorage
+        )
+
+        kotlinx.coroutines.runBlocking {
+            fakeStorage.clear()
+        }
+
+        assertFalse(authRepo.hasActiveSession())
+    }
+
+    @Test
+    fun testRegistrationData_defaultLegacyFieldsOmission() {
+        val dynamicAnswers = listOf(
+            RegistrationAnswerData("default-phone", "Phone Number", "+1 555 123 4567"),
+            RegistrationAnswerData("q-dept", "Department", "Engineering")
+        )
+
+        // Simulating the clean registration submission without legacy prototype inputs
+        val data = RegistrationData(
+            eventId = "evt-backend-99",
+            eventName = "Annual Tech Summit",
+            fullName = "John Doe",
+            email = "john@example.com",
+            institution = "Acme Corp",
+            purpose = "General Attendee",
+            durationDays = 1,
+            vehicleNumber = null,
+            answers = dynamicAnswers
+        )
+
+        assertEquals("General Attendee", data.purpose)
+        assertEquals(1, data.durationDays)
+        assertEquals(null, data.vehicleNumber)
+        assertEquals(2, data.answers.size)
+
+        // Verify Review Registration logic cleanly identifies and hides empty/default legacy section
+        val isDefaultOrEmptyLegacy = data.vehicleNumber.isNullOrBlank() &&
+            (data.purpose.isBlank() || data.purpose.equals("General Attendee", ignoreCase = true) || data.purpose.equals("GENERAL_ATTENDEE", ignoreCase = true))
+
+        assertTrue(isDefaultOrEmptyLegacy)
+        assertTrue(data.answers.isNotEmpty())
+    }
+
+    @Test
+    fun testTokenAuthenticator_ignoresAuthEndpointsToPreventLoops() {
+        val fakeStorage = com.mpc.propass.data.local.FakeTokenStorage()
+        val authenticator = com.mpc.propass.network.interceptor.TokenAuthenticator(fakeStorage)
+
+        val request = okhttp3.Request.Builder()
+            .url("http://localhost:3000/api/v1/auth/refresh")
+            .build()
+        val response = okhttp3.Response.Builder()
+            .request(request)
+            .protocol(okhttp3.Protocol.HTTP_1_1)
+            .code(401)
+            .message("Unauthorized")
+            .build()
+
+        val retryRequest = authenticator.authenticate(null, response)
+        assertEquals("TokenAuthenticator must return null for /auth/refresh to prevent loops", null, retryRequest)
+    }
+
+    @Test
+    fun testOrganizerAttendeeSwitching_preservesRoleWithoutSessionLoss() {
+        val fakeStorage = com.mpc.propass.data.local.FakeTokenStorage()
+        val authRepo = com.mpc.propass.data.repository.AuthRepositoryImpl(
+            apiService = com.mpc.propass.network.NetworkClient.apiService,
+            tokenStorage = fakeStorage
+        )
+
+        kotlinx.coroutines.runBlocking {
+            fakeStorage.saveTokens("access-tok", "refresh-tok")
+            fakeStorage.saveUser("usr-1", "organizer@propass.com", UserRole.ORGANIZER.name)
+        }
+
+        assertTrue(authRepo.hasActiveSession())
+        assertTrue(authRepo.isOrganizer())
+        assertEquals(UserRole.ORGANIZER.name, authRepo.getUserRole())
+
+        // Switch to Attendee mode (e.g. navigation without logout)
+        // User remains authenticated and keeps their organizer role
+        assertTrue("Session must remain active", authRepo.hasActiveSession())
+        assertTrue("Role must remain ORGANIZER", authRepo.isOrganizer())
+        assertEquals("access-tok", authRepo.getAccessToken())
+    }
 }

@@ -482,5 +482,53 @@ describe('Registration API (Phase 2D)', () => {
       expect(body.data.holder.fullName).toBe('Alex Morgan');
       expect(body.data.holder.organization).toBe('University of Technology');
     });
+
+    it('22. Registration without explicit purpose or durationDays defaults cleanly and issues active pass', async () => {
+      const uniqueSlug = `default-reg-event-${Date.now()}`;
+      const event = await prisma.event.create({
+        data: {
+          slug: uniqueSlug,
+          title: 'Custom Organizer Event',
+          overline: 'DEFAULT REG',
+          subtitle: 'Subtitle',
+          startDate: new Date('2026-11-20T09:00:00Z'),
+          endDate: new Date('2026-11-21T18:00:00Z'),
+          maxDuration: 2,
+          isActive: true,
+        },
+      });
+
+      const regRes = await app.inject({
+        method: 'POST',
+        url: '/api/v1/registrations',
+        headers: { authorization: `Bearer ${tokenB}` },
+        payload: {
+          eventId: uniqueSlug,
+          fullName: 'Jordan Lee',
+          email: 'jordan.lee@example.com',
+          institution: 'MIT Lab',
+        },
+      });
+
+      expect(regRes.statusCode).toBe(201);
+      const regBody = JSON.parse(regRes.body);
+      expect(regBody.success).toBe(true);
+      expect(regBody.data.registration.purpose).toBe('GENERAL_ATTENDEE');
+      expect(regBody.data.registration.durationDays).toBe(1);
+
+      // Verify Digital Pass is active for user B
+      const passRes = await app.inject({
+        method: 'GET',
+        url: '/api/v1/passes/me',
+        headers: { authorization: `Bearer ${tokenB}` },
+      });
+      expect(passRes.statusCode).toBe(200);
+      const passBody = JSON.parse(passRes.body);
+      expect(passBody.data.pass.isActive).toBe(true);
+      expect(passBody.data.holder.fullName).toBe('Jordan Lee');
+
+      await prisma.registration.deleteMany({ where: { eventId: event.id } });
+      await prisma.event.delete({ where: { id: event.id } });
+    });
   });
 });

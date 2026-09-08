@@ -1,9 +1,11 @@
 package com.mpc.propass.network
 
+import com.mpc.propass.data.local.TokenStorage
 import com.mpc.propass.network.api.ProPassApiService
 import com.mpc.propass.network.config.NetworkConfig
 import com.mpc.propass.network.interceptor.AuthInterceptor
 import com.mpc.propass.network.interceptor.NoOpTokenProvider
+import com.mpc.propass.network.interceptor.TokenAuthenticator
 import com.mpc.propass.network.interceptor.TokenProvider
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -16,13 +18,16 @@ import java.util.concurrent.TimeUnit
 /**
  * Singleton networking client and factory for the ProPass Android client.
  *
- * Configures Moshi JSON serialization, OkHttp transport with authentication
- * and logging interceptors, and Retrofit 2 REST client.
+ * Configures Moshi JSON serialization, OkHttp transport with authentication,
+ * token refreshment, and logging interceptors, and Retrofit 2 REST client.
  */
 object NetworkClient {
 
     @Volatile
     private var currentTokenProvider: TokenProvider = NoOpTokenProvider
+
+    @Volatile
+    private var currentTokenStorage: TokenStorage? = null
 
     @Volatile
     private var cachedApiService: ProPassApiService? = null
@@ -40,10 +45,12 @@ object NetworkClient {
      * Builds an OkHttpClient configured with authentication and logging.
      *
      * @param tokenProvider Provides access tokens for outgoing requests.
+     * @param tokenStorage Provides token persistence for transparent 401 refresh.
      * @param enableLogging Whether to enable HTTP body logging (defaults to true in debug builds).
      */
     fun createOkHttpClient(
         tokenProvider: TokenProvider = currentTokenProvider,
+        tokenStorage: TokenStorage? = currentTokenStorage,
         enableLogging: Boolean = true
     ): OkHttpClient {
         val builder = OkHttpClient.Builder()
@@ -51,6 +58,10 @@ object NetworkClient {
             .readTimeout(NetworkConfig.READ_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .writeTimeout(NetworkConfig.WRITE_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .addInterceptor(AuthInterceptor(tokenProvider))
+
+        if (tokenStorage != null) {
+            builder.authenticator(TokenAuthenticator(tokenStorage))
+        }
 
         if (enableLogging) {
             val loggingInterceptor = HttpLoggingInterceptor().apply {
@@ -85,9 +96,10 @@ object NetworkClient {
     fun createApiService(
         baseUrl: String = NetworkConfig.baseUrl,
         tokenProvider: TokenProvider = currentTokenProvider,
+        tokenStorage: TokenStorage? = currentTokenStorage,
         enableLogging: Boolean = true
     ): ProPassApiService {
-        val client = createOkHttpClient(tokenProvider, enableLogging)
+        val client = createOkHttpClient(tokenProvider, tokenStorage, enableLogging)
         val retrofit = createRetrofit(baseUrl, client)
         return retrofit.create(ProPassApiService::class.java)
     }
@@ -103,9 +115,23 @@ object NetworkClient {
     }
 
     /**
+     * Updates the active token storage and invalidates any cached service instances.
+     */
+    @Synchronized
+    fun setTokenStorage(tokenStorage: TokenStorage?) {
+        currentTokenStorage = tokenStorage
+        cachedApiService = null
+    }
+
+    /**
      * Retrieves the current token provider.
      */
     fun getTokenProvider(): TokenProvider = currentTokenProvider
+
+    /**
+     * Retrieves the current token storage.
+     */
+    fun getTokenStorage(): TokenStorage? = currentTokenStorage
 
     /**
      * Default shared instance of [ProPassApiService] using active configuration.

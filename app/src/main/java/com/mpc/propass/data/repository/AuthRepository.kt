@@ -169,7 +169,7 @@ class AuthRepositoryImpl(
     }
 
     override fun hasActiveSession(): Boolean {
-        return !tokenStorage.getAccessToken().isNullOrBlank()
+        return !tokenStorage.getAccessToken().isNullOrBlank() || !tokenStorage.getRefreshToken().isNullOrBlank()
     }
 
     override fun getAccessToken(): String? = tokenStorage.getAccessToken()

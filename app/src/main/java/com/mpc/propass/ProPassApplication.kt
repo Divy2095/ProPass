@@ -64,9 +64,10 @@ class ProPassApplication : Application() {
         // 1. Initialize persistent DataStore token storage
         tokenStorage = DataStoreTokenStorage.create(this)
 
-        // 2. Wire DataStore token provider to Phase 3A NetworkClient
+        // 2. Wire DataStore token provider and token storage to NetworkClient
         val tokenProvider = DataStoreTokenProvider(tokenStorage)
         NetworkClient.setTokenProvider(tokenProvider)
+        NetworkClient.setTokenStorage(tokenStorage)
 
         // 3. Initialize repositories
         authRepository = AuthRepositoryImpl(

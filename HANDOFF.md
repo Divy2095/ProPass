@@ -785,6 +785,34 @@ Following manual testing on a physical device, 4 critical issues were identified
     * `FormPreviewActivity.kt` & `activity_form_preview.xml`
   * Added unit tests in `Phase5FixesVerificationTest.kt` verifying dynamic question filtering, `RegistrationData` serialization, and fallback identity resolution.
 
+### 9. Issue 9 (Batch 3) — Removal of Duplicate / Legacy Prototype Registration Fields
+* **Root Cause:**
+  * In `SmartFormRegistrationActivity`, legacy prototype fields (Purpose of Visit dropdown, Expected Duration, Vehicle Number) were hardcoded in `activity_smart_form_registration.xml`. When registering for real organizer events, the organizer's actual form questions appeared beneath these legacy fields.
+* **Fix:**
+  * Assigned `id="@+id/sectionLegacyDetails"` to the legacy details container with `android:visibility="gone"`.
+  * Updated `SmartFormRegistrationActivity.kt` to only validate purpose and duration when `sectionLegacyDetails` is visible.
+  * In `setupSubmitButton()`, default `purpose = "General Attendee"`, `duration = maxDuration.coerceAtLeast(1)`, `vehicle = null` when legacy details are hidden.
+  * Updated backend `registration.schema.ts` to make `purpose` optional with `.default('GENERAL_ATTENDEE')` and `durationDays` optional with `.default(1)`.
+  * In `ReviewRegistrationActivity.kt`, added `cardVisitDetails` and conditionally hid it when legacy fields are at defaults and custom questions are present.
+
+### 10. Issue 10 (Batch 3) — Session Persistence & Transparent Token Refresh
+* **Root Cause:**
+  * Backend access tokens expire in 15 minutes (`JWT_EXPIRES_IN: '15m'`), while refresh tokens have a 7-day TTL (`REFRESH_TOKEN_EXPIRES_DAYS: 7`).
+  * Android's OkHttp client previously had no `Authenticator` registered. Whenever an access token expired, API requests returned 401 Unauthorized, prompting `HomeDashboardActivity` to clear the backstack and redirect to `LoginActivity`.
+  * In `TokenStorage.kt`, volatile cache variables were populated asynchronously, causing potential startup race conditions where `getAccessToken()` momentarily returned null on cold process launch.
+  * `AuthRepository.hasActiveSession()` checked only `!getAccessToken().isNullOrBlank()`, ignoring the 7-day refresh token.
+* **Fix:**
+  * Created `TokenAuthenticator` ([`TokenAuthenticator.kt`](file:///home/divy/AndroidProjects/ProPass/app/src/main/java/com/mpc/propass/network/interceptor/TokenAuthenticator.kt)) implementing `okhttp3.Authenticator`. Intercepts 401s, executes synchronized calls to `POST /api/v1/auth/refresh` using the persisted refresh token, saves new tokens in `TokenStorage`, and transparently retries failed requests. Prevents infinite loops on auth endpoints (`/auth/login`, `/auth/register`, `/auth/refresh`).
+  * In `TokenStorage.kt`, added `ensureCacheInitialized()` to synchronously block on DataStore during cold start if the cache hasn't yet collected. Updated `isAuthenticatedFlow` to check both access and refresh tokens.
+  * In `AuthRepository.kt`, updated `hasActiveSession()` to `!tokenStorage.getAccessToken().isNullOrBlank() || !tokenStorage.getRefreshToken().isNullOrBlank()`.
+  * Wired `TokenAuthenticator` into `NetworkClient.kt` and `ProPassApplication.kt`.
+
+### 11. Issue 11 (Batch 3) — Registration Confirmation & Stack Clearance
+* **Fix:**
+  * In `RegistrationSuccessActivity.kt`, added `onBackPressedDispatcher.addCallback` to route hardware back presses directly to `HomeDashboardActivity` with `FLAG_ACTIVITY_CLEAR_TOP or FLAG_ACTIVITY_SINGLE_TOP`.
+  * In `ReviewRegistrationActivity.kt`, handled HTTP 409 (`DuplicateRegistrationException`) by displaying a dedicated `MaterialAlertDialogBuilder` offering "View My Pass" (navigates to `DigitalPassActivity`) or "Back to Home".
+  * Verified Digital Pass expiration guarantees in `registration.service.ts` so passes are valid for at least 1 full year from issuance.
+
 ---
 
 ## 18. Development Roadmap
@@ -808,21 +836,23 @@ Following manual testing on a physical device, 4 critical issues were identified
 * [x] **Phase 4D: Organizer Registration Management** (Completed)
 * [x] **Phase 5 Bug Fixes: Batch 1 (4 Issues)** (Completed)
 * [x] **Phase 5 Bug Fixes: Batch 2 (4 Issues)** (Completed)
+* [x] **Phase 5 Bug Fixes: Batch 3 (Registration Polish & Session Resilience)** (Completed)
 * [ ] **Phase 5 End-to-End Physical-Device Verification**
 
 ---
 
 ## 19. Current Stopping Point
 
-> **Phase 5 Bug Fixes (Batch 2) Complete:** All 4 integration issues identified during physical-device verification have been resolved and verified:
-> 1. **Scanned QR Opens Event's Real Saved Form:** Scanned events dynamically load questions from `EventDto` / backend, auto-fill attendee profile info in verified card, filter default name/email, and render phone and custom questions.
-> 2. **Digital Pass Issuance on Registration:** Backend automatically creates a `DigitalPass` record in PostgreSQL during registration. `DigitalPassActivity` renders active pass with ZXing QR code, pass number, and attendee identity immediately upon successful registration.
-> 3. **Organizer Attendee Mode:** Preserves session and role without logout; provides seamless 1-tap re-entry via dynamic portal cards.
-> 4. **Prototype String Elimination:** Converted all static "Alex Morgan" / "TechConf 2024" strings to `tools:text` and dynamic bindings.
+> **Phase 5 Bug Fixes (Batch 3) Complete:** All verification issues identified during manual testing have been resolved, automated tests added, and builds verified:
+> 1. **Removal of Legacy Registration Fields:** The attendee registration form hides legacy prototype fields (purpose, duration, vehicle number) and accepts clean defaults on the backend (`purpose: 'GENERAL_ATTENDEE'`, `durationDays: 1`). Review screen hides empty/default legacy cards.
+> 2. **Session Persistence & Transparent Refresh:** Resolved random logout after app restarts and 15-minute access token expiry by introducing `TokenAuthenticator` for transparent 401 refresh, eager startup cache loading in `TokenStorage`, and updating `hasActiveSession()` to check the 7-day refresh token.
+> 3. **Proper Registration Flow & Stack Clearance:** "Back to Home" and hardware back button in `RegistrationSuccessActivity` cleanly route to `HomeDashboardActivity` clearing the form stack. 409 duplicate registrations present an interactive dialog offering direct navigation to "View My Pass" or "Back to Home".
+> 4. **Pass Validity Period:** Verified that issued passes are guaranteed valid for 1 full year from creation.
+> 5. **Organizer Mode Switching:** Verified seamless, role-preserving switching between Organizer and Attendee modes without session loss or database mutation.
 >
 > **Verification Status:**
-> - Android Unit Tests: All 27 test suites passed (`./gradlew testDebugUnitTest`).
-> - Debug APK Build: `BUILD SUCCESSFUL` (`./gradlew assembleDebug`).
-> - Backend Vitest Tests: All 124 tests passed across 10 suites (`npm test`).
-> - Git checks: `git diff --check` clean. Zero ADB, zero emulator commands executed. No git commit or push performed.
+> - Android Unit Tests: All 142 unit tests passed across 27 test suites (`./gradlew testDebugUnitTest`).
+> - Debug APK Build: `BUILD SUCCESSFUL` in 2s (`./gradlew assembleDebug`).
+> - Backend Vitest Tests: All 125 tests passed across 10 suites (`npm test`).
+> - Git checks: `git diff --check` clean with 0 whitespace issues. Zero ADB, zero emulator commands executed. No git commit or push performed.
 > *Updated on: September 7, 2026*

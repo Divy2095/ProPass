@@ -210,6 +210,11 @@ export class RegistrationService {
 
         const qrPayload = `propass:pass:${passNumber}`;
 
+        const oneYearFromNow = new Date();
+        oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+        const eventEnd = event.endDate ? new Date(event.endDate) : null;
+        const passExpiresAt = (eventEnd && eventEnd > oneYearFromNow) ? eventEnd : oneYearFromNow;
+
         await tx.digitalPass.create({
           data: {
             userId,
@@ -217,16 +222,21 @@ export class RegistrationService {
             qrPayload,
             tier,
             isActive: true,
-            expiresAt: event.endDate ? new Date(event.endDate) : null,
+            expiresAt: passExpiresAt,
           },
         });
       } else {
+        const oneYearFromNow = new Date();
+        oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+        const eventEnd = event.endDate ? new Date(event.endDate) : null;
+        const passExpiresAt = (eventEnd && eventEnd > oneYearFromNow) ? eventEnd : oneYearFromNow;
+
         await tx.digitalPass.update({
           where: { userId },
           data: {
             isActive: true,
             tier: existingPass.tier || tier,
-            expiresAt: event.endDate ? new Date(event.endDate) : existingPass.expiresAt,
+            expiresAt: (existingPass.expiresAt && existingPass.expiresAt > new Date()) ? existingPass.expiresAt : passExpiresAt,
           },
         });
       }

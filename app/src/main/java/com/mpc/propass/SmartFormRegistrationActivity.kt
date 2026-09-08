@@ -91,6 +91,7 @@ class SmartFormRegistrationActivity : AppCompatActivity() {
     private lateinit var tvValInstitution: TextView
     private lateinit var tvErrorInstitution: TextView
 
+    private lateinit var sectionLegacyDetails: LinearLayout
     private lateinit var layoutPurposeSelect: FrameLayout
     private lateinit var tvSelectedPurpose: TextView
     private lateinit var tvErrorPurpose: TextView
@@ -188,6 +189,7 @@ class SmartFormRegistrationActivity : AppCompatActivity() {
         tvValInstitution = findViewById(R.id.tvValInstitution)
         tvErrorInstitution = findViewById(R.id.tvErrorInstitution)
 
+        sectionLegacyDetails = findViewById(R.id.sectionLegacyDetails)
         layoutPurposeSelect = findViewById(R.id.layoutPurposeSelect)
         tvSelectedPurpose = findViewById(R.id.tvSelectedPurpose)
         tvErrorPurpose = findViewById(R.id.tvErrorPurpose)
@@ -479,9 +481,19 @@ class SmartFormRegistrationActivity : AppCompatActivity() {
                 val fullName = tvValFullName.text.toString().trim()
                 val email = tvValEmail.text.toString().trim()
                 val institution = tvValInstitution.text.toString().trim()
-                val purpose = tvSelectedPurpose.text.toString().trim()
-                val duration = etDuration.text.toString().trim().toInt()
-                val vehicle = etVehicle.text.toString().trim().takeIf { it.isNotBlank() }
+                val purpose = if (sectionLegacyDetails.visibility == View.VISIBLE) {
+                    tvSelectedPurpose.text.toString().trim()
+                } else {
+                    "General Attendee"
+                }
+                val duration = if (sectionLegacyDetails.visibility == View.VISIBLE) {
+                    etDuration.text.toString().trim().toIntOrNull() ?: 1
+                } else {
+                    maxDuration.coerceAtLeast(1)
+                }
+                val vehicle = if (sectionLegacyDetails.visibility == View.VISIBLE) {
+                    etVehicle.text.toString().trim().takeIf { it.isNotBlank() }
+                } else null
 
                 val dynamicAnswers = dynamicHolders.mapNotNull { holder ->
                     val value = holder.getValue()
@@ -567,33 +579,34 @@ class SmartFormRegistrationActivity : AppCompatActivity() {
             clearInstitutionError()
         }
 
-        // 4. Purpose of Visit validation
-        val purpose = tvSelectedPurpose.text.toString().trim()
-        if (purpose.isEmpty() || purpose == getString(R.string.hint_select_purpose) || purpose !in purposeOptions) {
-            tvErrorPurpose.text = getString(R.string.error_purpose_required)
-            tvErrorPurpose.visibility = View.VISIBLE
-            layoutPurposeSelect.setBackgroundResource(R.drawable.bg_field_error)
-            isValid = false
-        } else {
-            clearPurposeError()
-        }
-
-        // 5. Expected Duration validation (1 to maxDuration days)
-        val durationStr = etDuration.text.toString().trim()
-        val duration = durationStr.toIntOrNull()
-        if (duration == null || duration < 1 || duration > maxDuration) {
-            tvErrorDuration.text = if (maxDuration == 5) {
-                getString(R.string.error_duration_invalid)
-            } else if (maxDuration == 1) {
-                "Enter a duration of 1 day"
+        // 4. Purpose of Visit & Duration validation (only when legacy details section is visible)
+        if (sectionLegacyDetails.visibility == View.VISIBLE) {
+            val purpose = tvSelectedPurpose.text.toString().trim()
+            if (purpose.isEmpty() || purpose == getString(R.string.hint_select_purpose) || purpose !in purposeOptions) {
+                tvErrorPurpose.text = getString(R.string.error_purpose_required)
+                tvErrorPurpose.visibility = View.VISIBLE
+                layoutPurposeSelect.setBackgroundResource(R.drawable.bg_field_error)
+                isValid = false
             } else {
-                "Enter a duration between 1 and $maxDuration days"
+                clearPurposeError()
             }
-            tvErrorDuration.visibility = View.VISIBLE
-            etDuration.setBackgroundResource(R.drawable.bg_field_error)
-            isValid = false
-        } else {
-            clearDurationError()
+
+            val durationStr = etDuration.text.toString().trim()
+            val duration = durationStr.toIntOrNull()
+            if (duration == null || duration < 1 || duration > maxDuration) {
+                tvErrorDuration.text = if (maxDuration == 5) {
+                    getString(R.string.error_duration_invalid)
+                } else if (maxDuration == 1) {
+                    "Enter a duration of 1 day"
+                } else {
+                    "Enter a duration between 1 and $maxDuration days"
+                }
+                tvErrorDuration.visibility = View.VISIBLE
+                etDuration.setBackgroundResource(R.drawable.bg_field_error)
+                isValid = false
+            } else {
+                clearDurationError()
+            }
         }
 
         // 6. Dynamic custom questions validation

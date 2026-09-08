@@ -363,12 +363,14 @@
 
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Manual Fields Section: Event Details -->
+            <!-- Manual Fields Section: Event Details (Legacy/Prototype - hidden for real dynamic events) -->
             <LinearLayout
+                android:id="@+id/sectionLegacyDetails"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:paddingBottom="16dp">
+                android:paddingBottom="16dp"
+                android:visibility="gone">
 
                 <TextView
                     android:layout_width="wrap_content"

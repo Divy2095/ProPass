@@ -81,6 +81,9 @@ class DataStoreTokenStorage(
     @Volatile
     private var cachedUserRole: String? = null
 
+    @Volatile
+    private var isCacheInitialized = false
+
     init {
         // Eagerly observe DataStore changes to keep in-memory cache synchronized
         scope.launch {
@@ -93,18 +96,39 @@ class DataStoreTokenStorage(
                     }
                 }
                 .collect { preferences ->
-                    cachedAccessToken = preferences[KEY_ACCESS_TOKEN]
-                    cachedRefreshToken = preferences[KEY_REFRESH_TOKEN]
-                    cachedUserId = preferences[KEY_USER_ID]
-                    cachedUserEmail = preferences[KEY_USER_EMAIL]
-                    cachedUserRole = preferences[KEY_USER_ROLE]
+                    updateCache(preferences)
                 }
+        }
+    }
+
+    private fun updateCache(preferences: Preferences) {
+        cachedAccessToken = preferences[KEY_ACCESS_TOKEN]
+        cachedRefreshToken = preferences[KEY_REFRESH_TOKEN]
+        cachedUserId = preferences[KEY_USER_ID]
+        cachedUserEmail = preferences[KEY_USER_EMAIL]
+        cachedUserRole = preferences[KEY_USER_ROLE]
+        isCacheInitialized = true
+    }
+
+    private fun ensureCacheInitialized() {
+        if (!isCacheInitialized) {
+            runCatching {
+                runBlocking(Dispatchers.IO) {
+                    val prefs = dataStore.data
+                        .catch { if (it is IOException) emit(emptyPreferences()) else throw it }
+                        .firstOrNull()
+                    if (prefs != null) {
+                        updateCache(prefs)
+                    }
+                }
+            }
         }
     }
 
     override suspend fun saveTokens(accessToken: String, refreshToken: String) {
         cachedAccessToken = accessToken
         cachedRefreshToken = refreshToken
+        isCacheInitialized = true
         dataStore.edit { preferences ->
             preferences[KEY_ACCESS_TOKEN] = accessToken
             preferences[KEY_REFRESH_TOKEN] = refreshToken
@@ -115,6 +139,7 @@ class DataStoreTokenStorage(
         cachedUserId = userId
         cachedUserEmail = email
         cachedUserRole = role
+        isCacheInitialized = true
         dataStore.edit { preferences ->
             preferences[KEY_USER_ID] = userId
             preferences[KEY_USER_EMAIL] = email
@@ -132,6 +157,7 @@ class DataStoreTokenStorage(
         cachedUserId = null
         cachedUserEmail = null
         cachedUserRole = null
+        isCacheInitialized = true
         dataStore.edit { preferences ->
             preferences.remove(KEY_ACCESS_TOKEN)
             preferences.remove(KEY_REFRESH_TOKEN)
@@ -141,15 +167,30 @@ class DataStoreTokenStorage(
         }
     }
 
-    override fun getAccessToken(): String? = cachedAccessToken
+    override fun getAccessToken(): String? {
+        ensureCacheInitialized()
+        return cachedAccessToken
+    }
 
-    override fun getRefreshToken(): String? = cachedRefreshToken
+    override fun getRefreshToken(): String? {
+        ensureCacheInitialized()
+        return cachedRefreshToken
+    }
 
-    override fun getUserId(): String? = cachedUserId
+    override fun getUserId(): String? {
+        ensureCacheInitialized()
+        return cachedUserId
+    }
 
-    override fun getUserEmail(): String? = cachedUserEmail
+    override fun getUserEmail(): String? {
+        ensureCacheInitialized()
+        return cachedUserEmail
+    }
 
-    override fun getUserRole(): String? = cachedUserRole
+    override fun getUserRole(): String? {
+        ensureCacheInitialized()
+        return cachedUserRole
+    }
 
     override val accessTokenFlow: Flow<String?> = dataStore.data
         .catch { if (it is IOException) emit(emptyPreferences()) else throw it }
@@ -165,5 +206,5 @@ class DataStoreTokenStorage(
 
     override val isAuthenticatedFlow: Flow<Boolean> = dataStore.data
         .catch { if (it is IOException) emit(emptyPreferences()) else throw it }
-        .map { !it[KEY_ACCESS_TOKEN].isNullOrBlank() }
+        .map { !it[KEY_ACCESS_TOKEN].isNullOrBlank() || !it[KEY_REFRESH_TOKEN].isNullOrBlank() }
 }

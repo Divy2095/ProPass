@@ -58,6 +58,7 @@ class ReviewRegistrationActivity : AppCompatActivity() {
     private lateinit var tvReviewDuration: TextView
     private lateinit var tvReviewVehicle: TextView
 
+    private lateinit var cardVisitDetails: View
     private lateinit var cardAdditionalDetails: View
     private lateinit var layoutDynamicAnswers: LinearLayout
 
@@ -100,6 +101,7 @@ class ReviewRegistrationActivity : AppCompatActivity() {
         tvReviewDuration = findViewById(R.id.tvReviewDuration)
         tvReviewVehicle = findViewById(R.id.tvReviewVehicle)
 
+        cardVisitDetails = findViewById(R.id.cardVisitDetails)
         cardAdditionalDetails = findViewById(R.id.cardAdditionalDetails)
         layoutDynamicAnswers = findViewById(R.id.layoutDynamicAnswers)
 
@@ -160,9 +162,18 @@ class ReviewRegistrationActivity : AppCompatActivity() {
         tvReviewFullName.text = data.fullName
         tvReviewEmail.text = data.email
         tvReviewInstitution.text = data.institution
-        tvReviewPurpose.text = data.purpose
-        tvReviewDuration.text = if (data.durationDays == 1) "1 day" else "${data.durationDays} days"
-        tvReviewVehicle.text = data.vehicleNumber.takeIf { !it.isNullOrBlank() } ?: getString(R.string.review_vehicle_not_provided)
+
+        val isDefaultOrEmptyLegacy = data.vehicleNumber.isNullOrBlank() &&
+            (data.purpose.isBlank() || data.purpose.equals("General Attendee", ignoreCase = true) || data.purpose.equals("GENERAL_ATTENDEE", ignoreCase = true))
+
+        if (isDefaultOrEmptyLegacy && data.answers.isNotEmpty()) {
+            cardVisitDetails.visibility = View.GONE
+        } else {
+            cardVisitDetails.visibility = View.VISIBLE
+            tvReviewPurpose.text = data.purpose
+            tvReviewDuration.text = if (data.durationDays == 1) "1 day" else "${data.durationDays} days"
+            tvReviewVehicle.text = data.vehicleNumber.takeIf { !it.isNullOrBlank() } ?: getString(R.string.review_vehicle_not_provided)
+        }
 
         if (data.answers.isNotEmpty()) {
             cardAdditionalDetails.visibility = View.VISIBLE
@@ -298,14 +309,34 @@ class ReviewRegistrationActivity : AppCompatActivity() {
                     btnSubmitRegistration.text = getString(R.string.btn_submit_registration)
                     btnSubmitRegistration.performHapticFeedback(HapticFeedbackConstants.REJECT)
 
-                    val errorMessage = when (error) {
-                        is DuplicateRegistrationException -> error.message ?: getString(R.string.error_duplicate_registration)
-                        is RegistrationValidationException -> error.message ?: getString(R.string.error_registration_failed)
-                        is RegistrationAuthException -> getString(R.string.error_auth_required)
-                        else -> error.message ?: getString(R.string.error_registration_failed)
+                    if (error is DuplicateRegistrationException) {
+                        com.google.android.material.dialog.MaterialAlertDialogBuilder(this@ReviewRegistrationActivity)
+                            .setTitle("Already Registered")
+                            .setMessage(error.message ?: "You have already registered for this event. Your pass is ready in your digital pass wallet.")
+                            .setPositiveButton("View My Pass") { _, _ ->
+                                val intent = Intent(this@ReviewRegistrationActivity, DigitalPassActivity::class.java).apply {
+                                    flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
+                                }
+                                startActivity(intent)
+                                finish()
+                            }
+                            .setNegativeButton("Back to Home") { _, _ ->
+                                val intent = Intent(this@ReviewRegistrationActivity, HomeDashboardActivity::class.java).apply {
+                                    flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                                }
+                                startActivity(intent)
+                                finish()
+                            }
+                            .setCancelable(true)
+                            .show()
+                    } else {
+                        val errorMessage = when (error) {
+                            is RegistrationValidationException -> error.message ?: getString(R.string.error_registration_failed)
+                            is RegistrationAuthException -> getString(R.string.error_auth_required)
+                            else -> error.message ?: getString(R.string.error_registration_failed)
+                        }
+                        Toast.makeText(this@ReviewRegistrationActivity, errorMessage, Toast.LENGTH_LONG).show()
                     }
-
-                    Toast.makeText(this@ReviewRegistrationActivity, errorMessage, Toast.LENGTH_LONG).show()
                 }
             }
         }

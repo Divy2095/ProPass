@@ -42,17 +42,21 @@ export const createRegistrationSchema = z.object({
     .min(1, 'Institution cannot be empty')
     .max(100, 'Institution cannot exceed 100 characters'),
   purpose: z
-    .string({ required_error: 'Purpose of visit is required' })
+    .string()
     .trim()
+    .optional()
+    .default('GENERAL_ATTENDEE')
     .refine((val) => val in purposeMapping, {
       message:
         'Invalid purpose of visit. Allowed values: GENERAL_ATTENDEE, SPEAKER, SPONSOR_EXHIBITOR, MEDIA_PRESS',
     })
     .transform((val) => purposeMapping[val] as PurposeOfVisit),
   durationDays: z
-    .number({ required_error: 'Duration (days) is required' })
+    .number()
     .int('Duration must be a whole number of days')
-    .min(1, 'Duration must be at least 1 day'),
+    .min(1, 'Duration must be at least 1 day')
+    .optional()
+    .default(1),
   vehicleNumber: z
     .string()
     .trim()
