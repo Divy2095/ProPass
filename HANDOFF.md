@@ -813,6 +813,24 @@ Following manual testing on a physical device, 4 critical issues were identified
   * In `ReviewRegistrationActivity.kt`, handled HTTP 409 (`DuplicateRegistrationException`) by displaying a dedicated `MaterialAlertDialogBuilder` offering "View My Pass" (navigates to `DigitalPassActivity`) or "Back to Home".
   * Verified Digital Pass expiration guarantees in `registration.service.ts` so passes are valid for at least 1 full year from issuance.
 
+### 12. Issue 12 — Android Launcher / App Icon Replacement
+* **Problem:**
+  * The Android application displayed the default Android green robot launcher icon on devices instead of ProPass branding.
+* **Reused Asset:**
+  * Identified and reused the existing official ProPass brand asset: [`app/src/main/res/drawable/ic_propass_logo.png`](file:///home/divy/AndroidProjects/ProPass/app/src/main/res/drawable/ic_propass_logo.png) (512x512 ProPass blue badge containing the QR code and microchip emblem on a white canvas). No new images or external assets were downloaded or generated.
+* **Fix:**
+  * **Adaptive Icon Foreground & Background:**
+    * In [`app/src/main/res/drawable/ic_launcher_background.xml`](file:///home/divy/AndroidProjects/ProPass/app/src/main/res/drawable/ic_launcher_background.xml): Replaced default 171-line green robot grid with clean solid white `#FFFFFF` vector matching the brand.
+    * In [`app/src/main/res/drawable/ic_launcher_foreground.xml`](file:///home/divy/AndroidProjects/ProPass/app/src/main/res/drawable/ic_launcher_foreground.xml): Replaced green robot vector with `<inset android:drawable="@drawable/ic_propass_logo" android:inset="14dp" />`.
+    * *Safe Zone Calculation:* The 108dp adaptive canvas has a safe circular zone of 72dp diameter (36dp radius). With `14dp` inset, the 512x512 logo scales to 80x80dp. The furthest corner of the 295x341px emblem is at radius $207.9 \times (80 / 512) = 35.2\text{dp} < 36.0\text{dp}$, preventing clipping on any launcher shape (circle, squircle, teardrop, rounded square).
+  * **Adaptive Icon Definitions:**
+    * Updated [`res/mipmap-anydpi-v26/ic_launcher.xml`](file:///home/divy/AndroidProjects/ProPass/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml) and [`ic_launcher_round.xml`](file:///home/divy/AndroidProjects/ProPass/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml) to reference the updated ProPass background and foreground.
+    * Created dedicated [`res/mipmap-anydpi-v26/ic_propass_launcher.xml`](file:///home/divy/AndroidProjects/ProPass/app/src/main/res/mipmap-anydpi-v26/ic_propass_launcher.xml) and [`ic_propass_launcher_round.xml`](file:///home/divy/AndroidProjects/ProPass/app/src/main/res/mipmap-anydpi-v26/ic_propass_launcher_round.xml).
+  * **Legacy/Fallback Drawables:**
+    * Created fallback XML bitmap drawables [`res/mipmap/ic_propass_launcher.xml`](file:///home/divy/AndroidProjects/ProPass/app/src/main/res/mipmap/ic_propass_launcher.xml) and [`res/mipmap/ic_propass_launcher_round.xml`](file:///home/divy/AndroidProjects/ProPass/app/src/main/res/mipmap/ic_propass_launcher_round.xml) pointing to `@drawable/ic_propass_logo` to prevent crashes on pre-v26 devices.
+  * **Manifest Wiring:**
+    * In [`app/src/main/AndroidManifest.xml`](file:///home/divy/AndroidProjects/ProPass/app/src/main/AndroidManifest.xml): Updated `<application>` tag attributes `android:icon="@mipmap/ic_propass_launcher"` and `android:roundIcon="@mipmap/ic_propass_launcher_round"`.
+
 ---
 
 ## 18. Development Roadmap
@@ -837,22 +855,24 @@ Following manual testing on a physical device, 4 critical issues were identified
 * [x] **Phase 5 Bug Fixes: Batch 1 (4 Issues)** (Completed)
 * [x] **Phase 5 Bug Fixes: Batch 2 (4 Issues)** (Completed)
 * [x] **Phase 5 Bug Fixes: Batch 3 (Registration Polish & Session Resilience)** (Completed)
+* [x] **Launcher Icon Polish: ProPass QR Logo Asset Configured** (Completed)
 * [ ] **Phase 5 End-to-End Physical-Device Verification**
 
 ---
 
 ## 19. Current Stopping Point
 
-> **Phase 5 Bug Fixes (Batch 3) Complete:** All verification issues identified during manual testing have been resolved, automated tests added, and builds verified:
-> 1. **Removal of Legacy Registration Fields:** The attendee registration form hides legacy prototype fields (purpose, duration, vehicle number) and accepts clean defaults on the backend (`purpose: 'GENERAL_ATTENDEE'`, `durationDays: 1`). Review screen hides empty/default legacy cards.
-> 2. **Session Persistence & Transparent Refresh:** Resolved random logout after app restarts and 15-minute access token expiry by introducing `TokenAuthenticator` for transparent 401 refresh, eager startup cache loading in `TokenStorage`, and updating `hasActiveSession()` to check the 7-day refresh token.
-> 3. **Proper Registration Flow & Stack Clearance:** "Back to Home" and hardware back button in `RegistrationSuccessActivity` cleanly route to `HomeDashboardActivity` clearing the form stack. 409 duplicate registrations present an interactive dialog offering direct navigation to "View My Pass" or "Back to Home".
-> 4. **Pass Validity Period:** Verified that issued passes are guaranteed valid for 1 full year from creation.
-> 5. **Organizer Mode Switching:** Verified seamless, role-preserving switching between Organizer and Attendee modes without session loss or database mutation.
+> **Launcher Icon Polish & Phase 5 Fixes Complete:**
+> 1. **Launcher Icon Replacement:** Replaced default Android robot icon with official ProPass QR-code badge asset (`ic_propass_logo.png`). Built full adaptive icon set (`ic_launcher_background.xml` `#FFFFFF`, `ic_launcher_foreground.xml` with 14dp safe-zone inset, `ic_propass_launcher` and `ic_propass_launcher_round` for both `mipmap-anydpi-v26` and legacy `mipmap`), wired cleanly into `AndroidManifest.xml`.
+> 2. **Removal of Legacy Registration Fields:** The attendee registration form hides legacy prototype fields and accepts clean defaults on the backend (`purpose: 'GENERAL_ATTENDEE'`, `durationDays: 1`). Review screen hides empty/default legacy cards.
+> 3. **Session Persistence & Transparent Refresh:** Resolved random logout after app restarts and 15-minute access token expiry with `TokenAuthenticator` for transparent 401 refresh, eager startup cache loading in `TokenStorage`, and checking 7-day refresh tokens.
+> 4. **Registration Flow & Stack Clearance:** "Back to Home" and hardware back button in `RegistrationSuccessActivity` cleanly route to `HomeDashboardActivity` clearing the form stack. 409 duplicate registrations present an interactive dialog.
+> 5. **Pass Validity Period:** Verified that issued passes are guaranteed valid for 1 full year from creation.
+> 6. **Organizer Mode Switching:** Verified seamless, role-preserving switching between Organizer and Attendee modes without session loss or database mutation.
 >
 > **Verification Status:**
 > - Android Unit Tests: All 142 unit tests passed across 27 test suites (`./gradlew testDebugUnitTest`).
-> - Debug APK Build: `BUILD SUCCESSFUL` in 2s (`./gradlew assembleDebug`).
+> - Debug APK Build: `BUILD SUCCESSFUL` (`./gradlew assembleDebug`).
 > - Backend Vitest Tests: All 125 tests passed across 10 suites (`npm test`).
 > - Git checks: `git diff --check` clean with 0 whitespace issues. Zero ADB, zero emulator commands executed. No git commit or push performed.
-> *Updated on: September 7, 2026*
+> *Updated on: September 8, 2026*
