@@ -271,7 +271,12 @@ class ReviewRegistrationActivity : AppCompatActivity() {
 
             lifecycleScope.launch {
                 val backendPurpose = RegistrationPurposeMapper.toBackendPurpose(data.purpose)
-                val answerDtos = data.answers.map { RegistrationAnswerDto(it.questionId, it.value) }
+                val answerDtos = data.answers.map {
+                    RegistrationAnswerDto(
+                        questionId = it.questionId,
+                        value = it.value
+                    )
+                }
                 val result = registrationRepository.createRegistration(
                     eventId = data.eventId,
                     fullName = data.fullName,
