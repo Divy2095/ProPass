@@ -19,7 +19,10 @@ object NetworkConfig {
      * Loopback address for physical device when using `adb reverse tcp:3000 tcp:3000`.
      */
     const val DEVICE_ADB_REVERSE_BASE_URL = "http://127.0.0.1:3000/"
-
+    /**
+     * Physical device over the same local Wi-Fi network as the backend host.
+     */
+    const val DEVICE_WIFI_BASE_URL = "http://10.235.123.153:3000/"
     /**
      * Default base URL used across the application.
      */

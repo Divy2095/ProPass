@@ -23,3 +23,7 @@ backend/.env
 backend/.env.local
 backend/coverage/
 *.log
+
+keystore.properties
+*.jks
+*.keystore

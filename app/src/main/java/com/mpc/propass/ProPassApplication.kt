@@ -54,10 +54,10 @@ class ProPassApplication : Application() {
         super.onCreate()
         instance = this
 
-        // 0. Auto-configure base URL: use adb reverse loopback on physical device
+        // 0. Auto-configure base URL: use local Wi-Fi on physical device
         if (!isEmulator()) {
             com.mpc.propass.network.config.NetworkConfig.baseUrl =
-                com.mpc.propass.network.config.NetworkConfig.DEVICE_ADB_REVERSE_BASE_URL
+                com.mpc.propass.network.config.NetworkConfig.DEVICE_WIFI_BASE_URL
             NetworkClient.reset()
         }
 
