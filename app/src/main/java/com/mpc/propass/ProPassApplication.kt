@@ -11,7 +11,8 @@ import com.mpc.propass.data.repository.UserRepository
 import com.mpc.propass.data.repository.UserRepositoryImpl
 import com.mpc.propass.network.NetworkClient
 import com.mpc.propass.network.interceptor.DataStoreTokenProvider
-
+import com.mpc.propass.BuildConfig
+import com.mpc.propass.network.config.NetworkConfig
 /**
  * Base Application class for ProPass Android application.
  *
@@ -55,9 +56,15 @@ class ProPassApplication : Application() {
         instance = this
 
         // 0. Auto-configure base URL: use local Wi-Fi on physical device
-        if (!isEmulator()) {
-            com.mpc.propass.network.config.NetworkConfig.baseUrl =
-                com.mpc.propass.network.config.NetworkConfig.DEVICE_WIFI_BASE_URL
+        if (BuildConfig.DEBUG) {
+            NetworkConfig.baseUrl = if (isEmulator()) {
+                NetworkConfig.EMULATOR_BASE_URL
+            } else {
+                NetworkConfig.DEVICE_ADB_REVERSE_BASE_URL
+            }
+            NetworkClient.reset()
+        } else {
+            NetworkConfig.baseUrl = NetworkConfig.PRODUCTION_BASE_URL
             NetworkClient.reset()
         }
 

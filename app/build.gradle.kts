@@ -29,6 +29,10 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    buildFeatures {
+        buildConfig = true
+    }
+
     signingConfigs {
         if (keystorePropertiesFile.exists()) {
             create("release") {
